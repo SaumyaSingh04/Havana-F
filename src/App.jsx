@@ -20,7 +20,7 @@ import MenuPlanManager from './components/Banquet/components/MenuPlanManager';
 import Invoice from './components/Banquet/pages/Students/Invoice';
 import MenuView from './components/Banquet/pages/Students/MenuView';
 import HotelCheckout from './components/booking/HotelCheckout';
-import HotelInvoice from './components/booking/HotelInvoice';
+import HotelInventory from './components/Inventory/HotelInventory';
 import './App.css'
 
 function App() {
@@ -65,7 +65,6 @@ function App() {
             
             {/* Checkout Routes */}
             <Route path="hotel-checkout" element={<HotelCheckout />} />
-            <Route path="invoice" element={<HotelInvoice />} />
           </Route>
           
           {/* Fallback */}
