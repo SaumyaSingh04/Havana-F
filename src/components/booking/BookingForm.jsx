@@ -1136,6 +1136,7 @@ const App = () => {
       photoUrl: formData.photoUrl || '',
       roomNumber: selectedRooms.map(r => r.room_number).join(','),
       numberOfRooms: selectedRooms.length,
+      selectedRooms: selectedRooms, // Pass the selected rooms array to backend
     };
     
     // Remove any MongoDB-specific fields that might cause issues
@@ -1151,6 +1152,8 @@ const App = () => {
     cleanFormData.rate = Number(cleanFormData.rate) || 0;
     cleanFormData.discountPercent = Number(cleanFormData.discountPercent) || 0;
     cleanFormData.days = Number(cleanFormData.days) || 0;
+    cleanFormData.cgstRate = Number(cleanFormData.cgstRate) || 2.5;
+    cleanFormData.sgstRate = Number(cleanFormData.sgstRate) || 2.5;
     
     console.log('Submitting booking data:', cleanFormData);
     

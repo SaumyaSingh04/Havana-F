@@ -159,6 +159,12 @@ const EditBookingForm = () => {
   const navigate = useNavigate();
   const editBooking = location.state?.editBooking;
 
+  const [allCategories, setAllCategories] = useState([]);
+  const [allRooms, setAllRooms] = useState([]);
+  const [selectedRooms, setSelectedRooms] = useState([]);
+  const [hasCheckedAvailability, setHasCheckedAvailability] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     grcNo: '',
     reservationId: '',
@@ -221,10 +227,29 @@ const EditBookingForm = () => {
 
   useEffect(() => {
     if (editBooking) {
+      // Extract category ID properly
+      const categoryId = typeof editBooking.categoryId === 'object' 
+        ? editBooking.categoryId._id || editBooking.categoryId.id
+        : editBooking.categoryId;
+      
+      // Initialize selectedRooms with existing booked rooms
+      if (editBooking.roomNumber) {
+        const existingRoomNumbers = editBooking.roomNumber.split(',').map(num => num.trim());
+        // Create mock room objects for existing rooms
+        const existingRooms = existingRoomNumbers.map(roomNum => ({
+          _id: `existing_${roomNum}`,
+          room_number: roomNum,
+          title: 'Existing Room',
+          price: 0, // Will be updated when real rooms are loaded
+          category: { _id: categoryId }
+        }));
+        setSelectedRooms(existingRooms);
+      }
+      
       setFormData({
         grcNo: editBooking.grcNo || '',
         reservationId: editBooking.reservationId || '',
-        categoryId: editBooking.categoryId || '',
+        categoryId: categoryId || '',
         bookingDate: editBooking.bookingDate ? new Date(editBooking.bookingDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         numberOfRooms: editBooking.numberOfRooms || 1,
         isActive: editBooking.isActive !== undefined ? editBooking.isActive : true,
@@ -285,6 +310,179 @@ const EditBookingForm = () => {
     }
   }, [editBooking, navigate]);
 
+  const fetchAllData = async () => {
+    try {
+      const [catRes, roomRes] = await Promise.all([
+        axios.get('/api/categories/all'),
+        axios.get('/api/rooms/all'),
+      ]);
+
+      const categories = Array.isArray(catRes.data) ? catRes.data : [];
+      const rooms = Array.isArray(roomRes.data) ? roomRes.data : [];
+
+      setAllRooms(rooms);
+      
+      const categoriesWithCounts = categories.map(category => ({
+        ...category,
+        totalRooms: rooms.filter(room => {
+          return room.category?._id === category._id;
+        }).length,
+        availableRoomsCount: 0,
+      }));
+      setAllCategories(categoriesWithCounts);
+
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  const handleCheckAvailability = async () => {
+    if (!formData.checkInDate || !formData.checkOutDate) {
+      showToast('Please select both check-in and check-out dates.', 'error');
+      return;
+    }
+    setLoading(true);
+    setHasCheckedAvailability(true);
+    try {
+      const [availabilityResponse, allRoomsResponse] = await Promise.all([
+        axios.get(`/api/rooms/available?checkInDate=${formData.checkInDate}&checkOutDate=${formData.checkOutDate}`),
+        axios.get('/api/rooms/all')
+      ]);
+      
+      const availableCategoriesData = availabilityResponse.data.availableRooms || [];
+      const allRoomsData = allRoomsResponse.data || [];
+
+      const trulyAvailableRooms = [];
+      availableCategoriesData.forEach(cat => {
+        if (cat.rooms && Array.isArray(cat.rooms)) {
+          cat.rooms.forEach(room => {
+            trulyAvailableRooms.push({
+              ...room,
+              category: { _id: cat.category, name: cat.categoryName },
+              categoryId: cat.category
+            });
+          });
+        }
+      });
+
+      const categoryRoomCounts = {};
+      availableCategoriesData.forEach(cat => {
+        categoryRoomCounts[cat.category] = cat.rooms ? cat.rooms.length : 0;
+      });
+
+      const updatedCategories = allCategories.map(cat => ({
+        ...cat,
+        availableRoomsCount: categoryRoomCounts[cat._id] || 0
+      }));
+      setAllCategories(updatedCategories);
+
+      setAllRooms(trulyAvailableRooms);
+
+      if (trulyAvailableRooms.length === 0) {
+        showToast('No rooms available for the selected dates.', 'error');
+      } else {
+        showToast(`Found ${trulyAvailableRooms.length} available rooms.`, 'success');
+      }
+
+    } catch (error) {
+      console.error('Availability check error:', error);
+      showToast(`Failed to check availability: ${error.message}`, 'error');
+      setAllRooms([]);
+      const resetCategories = allCategories.map(cat => ({ ...cat, availableRoomsCount: 0 }));
+      setAllCategories(resetCategories);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCategoryCardClick = (categoryId) => {
+    setFormData(prev => ({ ...prev, categoryId }));
+    setSelectedRooms([]);
+  };
+
+  const handleRoomSelection = (room) => {
+    setSelectedRooms((prev) => {
+      const isSelected = prev.some((r) => r._id === room._id);
+      let newSelectedRooms;
+      if (isSelected) {
+        newSelectedRooms = prev.filter((r) => r._id !== room._id);
+      } else {
+        newSelectedRooms = [...prev, room];
+      }
+      
+      const totalRate = newSelectedRooms.reduce((sum, selectedRoom) => {
+        return sum + (selectedRoom.price || 0);
+      }, 0);
+      
+      const days = formData.days || 1;
+      const finalRate = totalRate * days;
+      
+      setFormData(prevForm => ({
+        ...prevForm,
+        rate: finalRate,
+        roomNumber: newSelectedRooms.map(r => r.room_number).join(','),
+        numberOfRooms: newSelectedRooms.length
+      }));
+      
+      return newSelectedRooms;
+    });
+  };
+
+  const roomsForSelectedCategory = allRooms.filter(room => {
+    if (!formData.categoryId) return false;
+    const roomCategoryId = room.category?._id || room.categoryId;
+    const categoryMatch = roomCategoryId === formData.categoryId;
+    const isAvailable = room.status === 'available';
+    const notReserved = !room.is_reserved;
+    return categoryMatch && isAvailable && notReserved;
+  });
+
+  const getCategoryName = (categoryId) => {
+    const category = allCategories.find(cat => cat._id === categoryId);
+    return category && category.name ? category.name : 'Unknown Category';
+  };
+
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  // Update selectedRooms with real room data when allRooms is loaded
+  useEffect(() => {
+    if (allRooms.length > 0 && editBooking?.roomNumber && selectedRooms.length > 0) {
+      const existingRoomNumbers = editBooking.roomNumber.split(',').map(num => num.trim());
+      const realSelectedRooms = allRooms.filter(room => 
+        existingRoomNumbers.includes(room.room_number.toString())
+      );
+      if (realSelectedRooms.length > 0) {
+        setSelectedRooms(realSelectedRooms);
+      }
+    }
+  }, [allRooms, editBooking]);
+
+  useEffect(() => {
+    const checkIn = new Date(formData.checkInDate);
+    const checkOut = new Date(formData.checkOutDate);
+
+    if (!isNaN(checkIn.getTime()) && !isNaN(checkOut.getTime()) && checkOut > checkIn) {
+      const diffTime = Math.abs(checkOut - checkIn);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      const totalRoomRate = selectedRooms.reduce((sum, room) => {
+        return sum + (room.price || 0);
+      }, 0);
+      
+      const finalRate = totalRoomRate * diffDays;
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        days: diffDays,
+        rate: selectedRooms.length > 0 ? finalRate : prev.rate
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, days: 0 }));
+    }
+  }, [formData.checkInDate, formData.checkOutDate, selectedRooms]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -300,7 +498,8 @@ const EditBookingForm = () => {
       const updateData = {
         ...formData,
         cgstRate: formData.cgstRate / 100,
-        sgstRate: formData.sgstRate / 100
+        sgstRate: formData.sgstRate / 100,
+        selectedRooms: selectedRooms
       };
 
       await axios.put(`/api/bookings/update/${editBooking._id}`, updateData);
@@ -541,6 +740,150 @@ const EditBookingForm = () => {
                 </div>
               </section>
 
+              {/* Room & Availability Section */}
+              <section className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+                    <FaHotel className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+                  </div>
+                  <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+                    Room & Availability
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="checkInDate">Check-in Date</Label>
+                    <Input
+                      id="checkInDate"
+                      name="checkInDate"
+                      type="date"
+                      value={formData.checkInDate}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="checkOutDate">Check-out Date</Label>
+                    <Input
+                      id="checkOutDate"
+                      name="checkOutDate"
+                      type="date"
+                      value={formData.checkOutDate}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className="flex items-end md:col-span-2">
+                    <Button
+                      type="button"
+                      onClick={handleCheckAvailability}
+                      disabled={!formData.checkInDate || !formData.checkOutDate || new Date(formData.checkInDate) >= new Date(formData.checkOutDate)}
+                    >
+                      Check Availability
+                    </Button>
+                  </div>
+                </div>
+
+                {hasCheckedAvailability && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium mb-2 text-gray-700">Room Categories</h3>
+                    {allCategories.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full rounded-xl shadow-sm" style={{ backgroundColor: 'hsl(45, 100%, 95%)', border: '1px solid hsl(45, 100%, 85%)' }}>
+                          <thead style={{ backgroundColor: 'hsl(45, 100%, 90%)' }}>
+                            <tr>
+                              <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Category Name</th>
+                              <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Availability</th>
+                              <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y" style={{ borderColor: 'hsl(45, 100%, 90%)' }}>
+                            {allCategories.map(cat => (
+                              <tr key={cat._id} className={`${formData.categoryId === cat._id ? 'bg-blue-50' : 'hover:bg-gray-50'} ${cat.availableRoomsCount === 0 ? 'opacity-50' : ''}`}>
+                                <td className="py-4 px-6 text-sm font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>
+                                  {cat.name || 'Unknown'}
+                                  {cat.availableRoomsCount === 0 && <span className="text-red-500 text-xs ml-2">(No available rooms)</span>}
+                                </td>
+                                <td className="py-4 px-6 text-sm" style={{ color: 'hsl(45, 100%, 40%)' }}>
+                                  {`${cat.availableRoomsCount || 0} of ${cat.totalRooms || 0} available`}
+                                </td>
+                                <td className="py-4 px-6 text-sm">
+                                  <Button
+                                    type="button"
+                                    onClick={() => handleCategoryCardClick(cat._id)}
+                                    disabled={cat.availableRoomsCount === 0}
+                                    className="px-3 py-1 rounded-md transition-colors"
+                                    variant={formData.categoryId === cat._id ? "default" : "outline"}
+                                  >
+                                    {cat.availableRoomsCount === 0 ? 'Unavailable' : formData.categoryId === cat._id ? 'Selected' : 'Select'}
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 col-span-full">No categories found. Please check availability first.</p>
+                    )}
+                  </div>
+                )}
+
+                {formData.categoryId && hasCheckedAvailability && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium mb-2 text-gray-700">Select Rooms ({getCategoryName(formData.categoryId)})</h3>
+                    <p className="text-sm text-gray-500 mb-2">Available rooms: {roomsForSelectedCategory.length}</p>
+                    {roomsForSelectedCategory.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full rounded-xl shadow-sm" style={{ backgroundColor: 'hsl(45, 100%, 95%)', border: '1px solid hsl(45, 100%, 85%)' }}>
+                          <thead style={{ backgroundColor: 'hsl(45, 100%, 90%)' }}>
+                            <tr>
+                              <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Action</th>
+                              <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Room Number</th>
+                              <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Room Name</th>
+                              <th className="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>Price/Night</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y" style={{ borderColor: 'hsl(45, 100%, 90%)' }}>
+                            {roomsForSelectedCategory.map(room => (
+                              <tr 
+                                key={room._id} 
+                                className={`cursor-pointer ${selectedRooms.some(r => r._id === room._id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                                onClick={() => handleRoomSelection(room)}
+                              >
+                                <td className="py-4 px-6 text-sm">
+                                  <Button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRoomSelection(room);
+                                    }}
+                                    className="px-3 py-1 rounded-md transition-colors"
+                                    style={{
+                                      backgroundColor: selectedRooms.some(r => r._id === room._id)
+                                        ? 'hsl(120, 60%, 50%)'
+                                        : 'hsl(0, 60%, 50%)',
+                                      color: 'white'
+                                    }}
+                                  >
+                                    {selectedRooms.some(r => r._id === room._id) ? 'Unselect' : 'Select'}
+                                  </Button>
+                                </td>
+                                <td className="py-4 px-6 text-sm font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>{room.room_number || 'N/A'}</td>
+                                <td className="py-4 px-6 text-sm" style={{ color: 'hsl(45, 100%, 40%)' }}>{room.title || 'N/A'}</td>
+                                <td className="py-4 px-6 text-sm font-semibold" style={{ color: 'hsl(45, 100%, 20%)' }}>₹{room.price || 0}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">No rooms available for this category.</p>
+                    )}
+                  </div>
+                )}
+              </section>
+
               {/* Stay Information Section */}
               <section className="space-y-4">
                 <div className="flex items-center space-x-3">
@@ -553,33 +896,22 @@ const EditBookingForm = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="checkInDate">Check-in Date</Label>
+                    <Label htmlFor="numberOfRooms">Number of Rooms</Label>
                     <Input
-                      id="checkInDate"
-                      name="checkInDate"
-                      type="date"
-                      value={formData.checkInDate}
+                      id="numberOfRooms"
+                      name="numberOfRooms"
+                      type="number"
+                      min="1"
+                      value={formData.numberOfRooms}
                       onChange={handleChange}
+                      readOnly
+                      className="bg-gray-200"
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="checkOutDate">Check-out Date</Label>
-                    <Input
-                      id="checkOutDate"
-                      name="checkOutDate"
-                      type="date"
-                      value={formData.checkOutDate}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="roomNumber">Room Number</Label>
-                    <Input
-                      id="roomNumber"
-                      name="roomNumber"
-                      value={formData.roomNumber}
-                      onChange={handleChange}
-                    />
+                    {selectedRooms.length > 0 && (
+                      <p className="text-sm text-gray-600">
+                        Selected: {selectedRooms.map(r => r.room_number).join(', ')}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="noOfAdults">Adults</Label>

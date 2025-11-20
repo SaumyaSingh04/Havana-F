@@ -50,37 +50,12 @@ const HotelCheckout = ({ booking, onClose, onCheckoutComplete }) => {
       // Process payment
       await axios.put(`/api/checkout/${checkoutData._id}/payment`, {
         status: 'paid',
-        paidAmount: parseFloat(paymentAmount),
-        method: paymentMethod
+        paidAmount: parseFloat(paymentAmount)
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      // Update booking status
-      await axios.put(`/api/bookings/update/${booking._id || booking.id}`, {
-        status: 'Checked Out',
-        paymentStatus: 'Paid'
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      // Update room status to available
-      const roomResponse = await axios.get('/api/rooms/all', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      const room = roomResponse.data.find(r => 
-        r.room_number === booking.roomNumber || 
-        r.room_number === booking.room_number
-      );
-      
-      if (room) {
-        await axios.put(`/api/rooms/update/${room._id}`, {
-          status: 'available'
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
+      // The updatePaymentStatus function will handle booking and room updates automatically
 
       setStep(3);
       showToast('Payment processed successfully!', 'success');

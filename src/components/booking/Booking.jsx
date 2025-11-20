@@ -489,8 +489,20 @@ const BookingPage = () => {
                     <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                       {booking.name}
                     </td>
-                    <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
-                      {booking.roomNumber}
+                    <td className="px-2 sm:px-4 py-3 text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
+                      <div className="max-w-[120px]">
+                        {booking.roomNumber.includes(',') ? (
+                          <div className="flex flex-wrap gap-1">
+                            {booking.roomNumber.split(',').map((room, idx) => (
+                              <span key={idx} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                {room.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          booking.roomNumber
+                        )}
+                      </div>
                     </td>
                     <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm hidden lg:table-cell" style={{ color: 'hsl(45, 100%, 20%)' }}>
                       {booking.category}
@@ -610,8 +622,20 @@ const BookingPage = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 text-sm">
                 <div>
-                  <span style={{ color: 'hsl(45, 100%, 40%)' }}>Room:</span>
-                  <span className="ml-1 font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>{booking.roomNumber}</span>
+                  <span style={{ color: 'hsl(45, 100%, 40%)' }}>Room{booking.roomNumber.includes(',') ? 's' : ''}:</span>
+                  <div className="ml-1 font-medium" style={{ color: 'hsl(45, 100%, 20%)' }}>
+                    {booking.roomNumber.includes(',') ? (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {booking.roomNumber.split(',').map((room, idx) => (
+                          <span key={idx} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                            {room.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      booking.roomNumber
+                    )}
+                  </div>
                 </div>
                 <div>
                   <span style={{ color: 'hsl(45, 100%, 40%)' }}>Category:</span>
