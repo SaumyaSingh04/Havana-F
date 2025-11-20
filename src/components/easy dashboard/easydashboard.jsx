@@ -25,6 +25,16 @@ const fetchWithRetry = async (url, retries = 3) => {
             });
 
             if (!response.ok) {
+                // For 404 errors on optional endpoints, return empty array instead of throwing
+                if (response.status === 404 && (url.includes('/pantry/') || url.includes('/restaurant-orders/'))) {
+                    console.warn(`Endpoint ${url} not found (404), returning empty array`);
+                    return [];
+                }
+                // For 401 errors on bookings endpoint, return empty array to allow dashboard to load
+                if (response.status === 401 && url.includes('/bookings/')) {
+                    console.warn(`Authentication required for ${url}, returning empty array`);
+                    return [];
+                }
                 // Throw an error to trigger the catch block and retry
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -38,6 +48,11 @@ const fetchWithRetry = async (url, retries = 3) => {
                 await new Promise(resolve => setTimeout(resolve, delay));
             } else {
                 console.error(`Failed to fetch data from ${url} after ${retries} attempts.`);
+                // For optional endpoints and bookings, return empty array instead of throwing
+                if (url.includes('/pantry/') || url.includes('/restaurant-orders/') || url.includes('/bookings/')) {
+                    console.warn(`Endpoint ${url} failed, returning empty array`);
+                    return [];
+                }
                 throw new Error(`Failed to fetch data: ${error.message}`);
             }
         }

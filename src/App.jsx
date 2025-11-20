@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AppProvider } from './context/AppContext';
@@ -26,13 +26,20 @@ import HotelInventory from './components/Inventory/HotelInventory';
 import './App.css'
 
 function App() {
+  // Initialize dummy token for bypassing authentication
+  useEffect(() => {
+    if (!localStorage.getItem('token')) {
+      localStorage.setItem('token', 'bypass-token');
+      localStorage.setItem('role', 'admin');
+    }
+  }, []);
   return (
     <AppProvider>
       <Router>
         <Toaster position="top-right" />
         <Routes>
-          {/* Auth Routes */}
-          <Route path="/login" element={<Login />} />
+          {/* Auth Routes - Hidden */}
+          {/* <Route path="/login" element={<Login />} /> */}
           
           {/* Protected Routes */}
           <Route path="/" element={<Layout />}>
