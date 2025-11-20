@@ -281,6 +281,8 @@ const EditBookingForm = () => {
         planPackage: editBooking.planPackage || '',
         noOfAdults: editBooking.noOfAdults || 1,
         noOfChildren: editBooking.noOfChildren || 0,
+        extraBed: editBooking.extraBed || false,
+        extraBedCharge: editBooking.extraBedCharge || 0,
         rate: editBooking.rate || 0,
         cgstRate: editBooking.cgstRate ? editBooking.cgstRate * 100 : 2.5,
         sgstRate: editBooking.sgstRate ? editBooking.sgstRate * 100 : 2.5,
@@ -410,12 +412,16 @@ const EditBookingForm = () => {
         newSelectedRooms = [...prev, room];
       }
       
-      const taxableAmount = newSelectedRooms.reduce((sum, selectedRoom) => {
+      const totalRoomRate = newSelectedRooms.reduce((sum, selectedRoom) => {
         return sum + (selectedRoom.price || 0);
       }, 0);
       
       const days = formData.days || 1;
-      const finalTaxableAmount = taxableAmount * days;
+      const roomRate = totalRoomRate * days;
+      
+      // Add extra bed charges if applicable
+      const extraBedCharge = formData.extraBed ? (formData.extraBedCharge || 0) : 0;
+      const finalTaxableAmount = roomRate + extraBedCharge;
       
       // Calculate taxes
       const cgstAmount = finalTaxableAmount * (formData.cgstRate / 100);
@@ -476,7 +482,11 @@ const EditBookingForm = () => {
         return sum + (room.price || 0);
       }, 0);
       
-      const finalTaxableAmount = totalRoomRate * diffDays;
+      const roomRate = totalRoomRate * diffDays;
+      
+      // Add extra bed charges if applicable
+      const extraBedCharge = formData.extraBed ? (formData.extraBedCharge || 0) : 0;
+      const finalTaxableAmount = roomRate + extraBedCharge;
       
       setFormData(prev => ({ 
         ...prev, 
@@ -487,6 +497,24 @@ const EditBookingForm = () => {
       setFormData(prev => ({ ...prev, days: 0 }));
     }
   }, [formData.checkInDate, formData.checkOutDate, selectedRooms]);
+
+  // Recalculate rate when extra bed changes
+  useEffect(() => {
+    if (selectedRooms.length > 0 && formData.days > 0) {
+      const totalRoomRate = selectedRooms.reduce((sum, room) => {
+        return sum + (room.price || 0);
+      }, 0);
+      
+      const roomRate = totalRoomRate * formData.days;
+      const extraBedCharge = formData.extraBed ? (formData.extraBedCharge || 0) : 0;
+      const finalTaxableAmount = roomRate + extraBedCharge;
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        rate: finalTaxableAmount
+      }));
+    }
+  }, [formData.extraBed, formData.extraBedCharge, selectedRooms, formData.days]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -956,6 +984,32 @@ const EditBookingForm = () => {
                       onChange={handleChange}
                     />
                   </div>
+                  <div className="space-y-2 flex items-center gap-2">
+                    <Checkbox
+                      id="extraBed"
+                      checked={formData.extraBed || false}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        extraBed: e.target.checked,
+                        extraBedCharge: e.target.checked ? 500 : 0
+                      }))}
+                    />
+                    <Label htmlFor="extraBed">Extra Bed Required</Label>
+                  </div>
+                  {formData.extraBed && (
+                    <div className="space-y-2">
+                      <Label htmlFor="extraBedCharge">Extra Bed Charge (₹)</Label>
+                      <Input
+                        id="extraBedCharge"
+                        name="extraBedCharge"
+                        type="number"
+                        min="0"
+                        value={formData.extraBedCharge || 0}
+                        onChange={handleChange}
+                        placeholder="Enter extra bed charge"
+                      />
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="planPackage">Package Plan</Label>
                     <Input

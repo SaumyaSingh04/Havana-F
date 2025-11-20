@@ -301,6 +301,8 @@ export const AppProvider = ({ children }) => {
     planPackage: '',
     noOfAdults: 1,
     noOfChildren: 0,
+    extraBed: false,
+    extraBedCharge: 0,
     rate: 0,
     cgstRate: 2.5,
     sgstRate: 2.5,
@@ -1038,12 +1040,16 @@ const App = () => {
       }
       
       // Calculate total rate based on selected rooms and days
-      const totalRate = newSelectedRooms.reduce((sum, selectedRoom) => {
+      const totalRoomRate = newSelectedRooms.reduce((sum, selectedRoom) => {
         return sum + (selectedRoom.price || 0);
       }, 0);
       
       const days = formData.days || 1;
-      const finalRate = totalRate * days;
+      const roomRate = totalRoomRate * days;
+      
+      // Add extra bed charges if applicable
+      const extraBedCharge = formData.extraBed ? (formData.extraBedCharge || 0) : 0;
+      const finalRate = roomRate + extraBedCharge;
       
       // Update form data with calculated rate
       setFormData(prevForm => ({
@@ -1977,6 +1983,32 @@ const App = () => {
                 onChange={handleChange}
               />
             </div>
+            <div className="space-y-2 flex items-center gap-2">
+              <Checkbox
+                id="extraBed"
+                checked={formData.extraBed || false}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  extraBed: e.target.checked,
+                  extraBedCharge: e.target.checked ? 500 : 0
+                }))}
+              />
+              <Label htmlFor="extraBed">Extra Bed Required</Label>
+            </div>
+            {formData.extraBed && (
+              <div className="space-y-2">
+                <Label htmlFor="extraBedCharge">Extra Bed Charge (₹)</Label>
+                <Input
+                  id="extraBedCharge"
+                  name="extraBedCharge"
+                  type="number"
+                  min="0"
+                  value={formData.extraBedCharge || 0}
+                  onChange={handleChange}
+                  placeholder="Enter extra bed charge"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="planPackage">Package Plan</Label>
               <Input

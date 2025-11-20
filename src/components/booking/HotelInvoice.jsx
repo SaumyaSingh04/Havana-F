@@ -115,6 +115,27 @@ export default function Invoice() {
         // Use the invoice data directly from API response
         const mappedData = response.data.invoice;
         
+        // Add extra bed charge to items if it exists in booking data
+        if (bookingData && bookingData.extraBed && bookingData.extraBedCharge > 0) {
+          const extraBedItem = {
+            date: mappedData.items?.[0]?.date || new Date().toLocaleDateString('en-GB'),
+            particulars: 'Extra Bed Charge',
+            pax: 1,
+            declaredRate: bookingData.extraBedCharge,
+            hsn: '996311',
+            rate: 2.5,
+            cgstRate: bookingData.extraBedCharge * 0.025,
+            sgstRate: bookingData.extraBedCharge * 0.025,
+            amount: bookingData.extraBedCharge
+          };
+          
+          if (mappedData.items) {
+            mappedData.items.push(extraBedItem);
+          } else {
+            mappedData.items = [extraBedItem];
+          }
+        }
+        
         console.log('Mapped Invoice Data:', mappedData);
         setInvoiceData(mappedData);
         
