@@ -425,7 +425,7 @@ const EditBookingForm = () => {
       const roomRate = totalRoomRate * days;
       
       // Add extra bed charges if applicable
-      const extraBedCharge = formData.extraBed ? (formData.extraBedCharge || 0) : 0;
+      const extraBedCharge = formData.extraBed ? Number(formData.extraBedCharge || 0) : 0;
       const finalTaxableAmount = roomRate + extraBedCharge;
       
       // Calculate taxes
@@ -539,7 +539,7 @@ const EditBookingForm = () => {
       const roomRate = totalRoomRate * diffDays;
       
       // Add extra bed charges if applicable
-      const extraBedCharge = formData.extraBed ? (formData.extraBedCharge || 0) : 0;
+      const extraBedCharge = formData.extraBed ? Number(formData.extraBedCharge || 0) : 0;
       const finalTaxableAmount = roomRate + extraBedCharge;
       
       setFormData(prev => ({ 
@@ -560,7 +560,7 @@ const EditBookingForm = () => {
       }, 0);
       
       const roomRate = totalRoomRate * formData.days;
-      const extraBedCharge = formData.extraBed ? (formData.extraBedCharge || 0) : 0;
+      const extraBedCharge = formData.extraBed ? Number(formData.extraBedCharge || 0) : 0;
       const finalTaxableAmount = roomRate + extraBedCharge;
       
       setFormData(prev => ({ 

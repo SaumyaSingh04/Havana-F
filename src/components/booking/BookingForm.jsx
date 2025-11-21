@@ -608,25 +608,14 @@ const App = () => {
       const diffTime = Math.abs(checkOut - checkIn);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
-      // Calculate total rate based on selected rooms and new days
-      const totalRoomRate = selectedRooms.reduce((sum, room) => {
-        const rate = room.customPrice !== undefined && room.customPrice !== '' 
-          ? Number(room.customPrice) 
-          : (room.price || 0);
-        return sum + rate;
-      }, 0);
-      
-      const finalRate = totalRoomRate * diffDays;
-      
       setFormData(prev => ({ 
         ...prev, 
-        days: diffDays,
-        rate: selectedRooms.length > 0 ? finalRate : prev.rate
+        days: diffDays
       }));
     } else {
       setFormData(prev => ({ ...prev, days: 0 }));
     }
-  }, [formData.checkInDate, formData.checkOutDate, selectedRooms, setFormData]);
+  }, [formData.checkInDate, formData.checkOutDate, setFormData]);
 
 
   useEffect(() => {
@@ -680,7 +669,7 @@ const App = () => {
   useEffect(() => {
     if (selectedRooms.length > 0 && formData.days > 0) {
       const totalRoomRate = selectedRooms.reduce((sum, room) => {
-        const rate = room.customPrice !== undefined && room.customPrice !== '' 
+        const rate = room.customPrice !== undefined && room.customPrice !== '' && room.customPrice !== null
           ? Number(room.customPrice) 
           : (room.price || 0);
         return sum + rate;
@@ -695,7 +684,7 @@ const App = () => {
         rate: finalRate
       }));
     }
-  }, [selectedRooms.map(r => r.customPrice).join(','), formData.days, formData.extraBed, formData.extraBedCharge]);
+  }, [selectedRooms.map(r => r.customPrice).join(','), formData.days, formData.extraBed, formData.extraBedCharge, setFormData]);
 
 
 
@@ -2261,7 +2250,7 @@ const App = () => {
                 readOnly
                 className="bg-gray-100"
               />
-              <p className="text-xs text-gray-500">Calculated from room rates × days</p>
+              <p className="text-xs text-gray-500">Calculated from room rates × days ({formData.days} days)</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="cgstRate">CGST Rate (%)</Label>
