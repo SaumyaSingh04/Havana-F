@@ -585,7 +585,19 @@ const EditBookingForm = () => {
       
       const roomRate = totalRoomRate * formData.days;
       const extraBedCharge = selectedRooms.reduce((sum, room) => {
-        return sum + (room.extraBed ? (formData.extraBedCharge || 0) * formData.days : 0);
+        if (!room.extraBed) return sum;
+        
+        // Calculate extra bed days properly
+        const startDate = new Date(room.extraBedStartDate || formData.checkInDate);
+        const endDate = new Date(formData.checkOutDate);
+        
+        // If start date is same or after checkout, no extra bed charge
+        if (startDate >= endDate) return sum;
+        
+        const timeDiff = endDate.getTime() - startDate.getTime();
+        const extraBedDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+        
+        return sum + ((formData.extraBedCharge || 0) * Math.max(0, extraBedDays));
       }, 0);
       const finalRate = roomRate + extraBedCharge;
       
@@ -594,7 +606,7 @@ const EditBookingForm = () => {
         rate: finalRate
       }));
     }
-  }, [selectedRooms.map(r => `${r.customPrice}-${r.extraBed}`).join(','), formData.days, formData.extraBedCharge]);
+  }, [selectedRooms.map(r => `${r.customPrice}-${r.extraBed}-${r.extraBedStartDate}`).join(','), formData.days, formData.extraBedCharge, formData.checkInDate, formData.checkOutDate]);
 
   // Recalculate totals when tax rates change
   useEffect(() => {
@@ -651,8 +663,13 @@ const EditBookingForm = () => {
     try {
       // Calculate extra bed status
       const hasExtraBed = selectedRooms.some(room => room.extraBed);
-      const extraBedRoomsCount = selectedRooms.filter(room => room.extraBed).length;
-      const totalExtraBedCharge = extraBedRoomsCount * (formData.extraBedCharge || 0) * (formData.days || 1);
+      const totalExtraBedCharge = selectedRooms.reduce((sum, room) => {
+        if (!room.extraBed) return sum;
+        const startDate = new Date(room.extraBedStartDate || formData.checkInDate);
+        const endDate = new Date(formData.checkOutDate);
+        const days = Math.max(0, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)));
+        return sum + ((formData.extraBedCharge || 0) * days);
+      }, 0);
       
       // Calculate taxable amount and tax amounts
       const roomRate = selectedRooms.reduce((sum, room) => {
@@ -682,7 +699,8 @@ const EditBookingForm = () => {
         roomRates: selectedRooms.map(room => ({
           roomNumber: room.room_number,
           customRate: room.customPrice !== undefined ? room.customPrice : room.price,
-          extraBed: room.extraBed || false
+          extraBed: room.extraBed || false,
+          extraBedStartDate: room.extraBedStartDate || null
         })),
         extraBedRooms: selectedRooms.filter(room => room.extraBed).map(room => room.room_number)
       };
@@ -1546,13 +1564,49 @@ const EditBookingForm = () => {
                                   <Label htmlFor={`extraBed-${room._id}`}>Extra Bed (₹{formData.extraBedCharge}/day)</Label>
                                 </div>
                                 {room.extraBed && (
-                                  <div className="bg-yellow-50 p-2 rounded border text-sm">
+                                  <div className="bg-yellow-50 p-2 rounded border text-sm space-y-2">
+                                    <div>
+                                      <Label htmlFor={`extraBedStartDate-${room._id}`}>Extra Bed Start Date</Label>
+                                      <Input
+                                        id={`extraBedStartDate-${room._id}`}
+                                        type="date"
+                                        value={room.extraBedStartDate || formData.checkInDate}
+                                        min={formData.checkInDate}
+                                        max={formData.checkOutDate}
+                                        onChange={(e) => {
+                                          setSelectedRooms(prev => 
+                                            prev.map(r => 
+                                              r._id === room._id 
+                                                ? { ...r, extraBedStartDate: e.target.value }
+                                                : r
+                                            )
+                                          );
+                                        }}
+                                        className="text-xs"
+                                      />
+                                    </div>
                                     <div className="flex justify-between">
                                       <span>Extra bed cost:</span>
-                                      <span>₹{(Number(formData.extraBedCharge || 0) * (formData.days || 1)).toLocaleString()}</span>
+                                      <span>₹{(() => {
+                                        const startDate = new Date(room.extraBedStartDate || formData.checkInDate);
+                                        const endDate = new Date(formData.checkOutDate);
+                                        // If start date is same or after checkout, no charge
+                                        if (startDate >= endDate) return 0;
+                                        const timeDiff = endDate.getTime() - startDate.getTime();
+                                        const days = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+                                        return (Number(formData.extraBedCharge || 0) * Math.max(0, days)).toLocaleString();
+                                      })()}</span>
                                     </div>
                                     <div className="text-xs text-gray-600">
-                                      ₹{Number(formData.extraBedCharge || 0)} × {formData.days || 1} day(s)
+                                      ₹{Number(formData.extraBedCharge || 0)} × {(() => {
+                                        const startDate = new Date(room.extraBedStartDate || formData.checkInDate);
+                                        const endDate = new Date(formData.checkOutDate);
+                                        // If start date is same or after checkout, no days
+                                        if (startDate >= endDate) return 0;
+                                        const timeDiff = endDate.getTime() - startDate.getTime();
+                                        const days = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+                                        return Math.max(0, days);
+                                      })()} day(s)
                                     </div>
                                   </div>
                                 )}
@@ -1639,7 +1693,19 @@ const EditBookingForm = () => {
                             return sum + rate;
                           }, 0) * (formData.days || 1);
                           const extraBedTotal = selectedRooms.reduce((sum, room) => {
-                            return sum + (room.extraBed ? (formData.extraBedCharge || 0) * (formData.days || 1) : 0);
+                            if (!room.extraBed) return sum;
+                            
+                            // Calculate extra bed days properly
+                            const startDate = new Date(room.extraBedStartDate || formData.checkInDate);
+                            const endDate = new Date(formData.checkOutDate);
+                            
+                            // If start date is same or after checkout, no extra bed charge
+                            if (startDate >= endDate) return sum;
+                            
+                            const timeDiff = endDate.getTime() - startDate.getTime();
+                            const extraBedDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+                            
+                            return sum + ((formData.extraBedCharge || 0) * Math.max(0, extraBedDays));
                           }, 0);
                           const subtotal = roomRate + extraBedTotal;
                           const cgstAmount = subtotal * (Number(formData.cgstRate || 0) / 100);
@@ -1654,7 +1720,7 @@ const EditBookingForm = () => {
                               </div>
                               {extraBedTotal > 0 && (
                                 <div className="flex justify-between">
-                                  <span>Extra Beds ({selectedRooms.filter(r => r.extraBed).length} beds × {formData.days} days × ₹{formData.extraBedCharge || 0}):</span>
+                                  <span>Extra Beds ({selectedRooms.filter(r => r.extraBed).length} beds × variable days × ₹{formData.extraBedCharge || 0}):</span>
                                   <span>₹{extraBedTotal.toFixed(2)}</span>
                                 </div>
                               )}
