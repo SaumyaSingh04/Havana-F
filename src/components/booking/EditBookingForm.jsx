@@ -613,14 +613,37 @@ const EditBookingForm = () => {
         return sum + (room.extraBed ? (formData.extraBedCharge || 0) * (formData.days || 1) : 0);
       }, 0);
       
+      // Calculate taxable amount and tax amounts
+      const roomRate = selectedRooms.reduce((sum, room) => {
+        const rate = room.customPrice !== undefined && room.customPrice !== '' && room.customPrice !== null
+          ? Number(room.customPrice) 
+          : (room.price || 0);
+        return sum + rate;
+      }, 0) * (formData.days || 1);
+      
+      const taxableAmount = roomRate + totalExtraBedCharge;
+      const cgstAmount = taxableAmount * (formData.cgstRate / 100);
+      const sgstAmount = taxableAmount * (formData.sgstRate / 100);
+      const totalWithTax = taxableAmount + cgstAmount + sgstAmount;
+      
       const updateData = {
         ...formData,
         cgstRate: formData.cgstRate / 100,
         sgstRate: formData.sgstRate / 100,
         extraBed: hasExtraBed,
         extraBedCharge: totalExtraBedCharge,
+        taxableAmount: taxableAmount,
+        cgstAmount: cgstAmount,
+        sgstAmount: sgstAmount,
+        rate: totalWithTax,
         selectedRooms: selectedRooms,
-        roomGuestDetails: formData.roomGuestDetails
+        roomGuestDetails: formData.roomGuestDetails,
+        roomRates: selectedRooms.map(room => ({
+          roomNumber: room.room_number,
+          customRate: room.customPrice !== undefined ? room.customPrice : room.price,
+          extraBed: room.extraBed || false
+        })),
+        extraBedRooms: selectedRooms.filter(room => room.extraBed).map(room => room.room_number)
       };
 
       await axios.put(`/api/bookings/update/${editBooking._id}`, updateData);
