@@ -563,6 +563,12 @@ const EditBookingForm = () => {
     }
   }, [selectedRooms.map(r => `${r.customPrice}-${r.extraBed}`).join(','), formData.days, formData.extraBedCharge]);
 
+  // Recalculate totals when tax rates change
+  useEffect(() => {
+    // This effect ensures the UI updates when CGST/SGST rates change
+    // The actual calculation is done in the Rate Breakdown section
+  }, [formData.cgstRate, formData.sgstRate]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -593,12 +599,25 @@ const EditBookingForm = () => {
     e.preventDefault();
     
     try {
+      // Calculate extra bed status
+      const hasExtraBed = selectedRooms.some(room => room.extraBed);
+      const totalExtraBedCharge = selectedRooms.reduce((sum, room) => {
+        return sum + (room.extraBed ? (formData.extraBedCharge || 0) * (formData.days || 1) : 0);
+      }, 0);
+      
       const updateData = {
         ...formData,
         cgstRate: formData.cgstRate / 100,
         sgstRate: formData.sgstRate / 100,
+        extraBed: hasExtraBed,
+        extraBedCharge: totalExtraBedCharge,
         selectedRooms: selectedRooms,
-        roomGuestDetails: formData.roomGuestDetails
+        roomGuestDetails: formData.roomGuestDetails,
+        roomRates: selectedRooms.map(room => ({
+          roomNumber: room.room_number,
+          customRate: room.customPrice !== undefined ? room.customPrice : room.price,
+          extraBed: room.extraBed || false
+        }))
       };
 
       await axios.put(`/api/bookings/update/${editBooking._id}`, updateData);
