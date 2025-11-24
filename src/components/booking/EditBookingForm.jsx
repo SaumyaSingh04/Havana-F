@@ -509,11 +509,6 @@ const EditBookingForm = () => {
         }
         
         // Set custom prices and extra bed info from booking data
-        console.log('EditBooking data:', editBooking);
-        console.log('EditBooking roomRates:', editBooking?.roomRates);
-        console.log('EditBooking extraBedRooms:', editBooking?.extraBedRooms);
-        console.log('Real selected rooms:', realSelectedRooms);
-        
         const updatedRooms = realSelectedRooms.map(room => {
           let roomData = { ...room };
           
@@ -523,11 +518,10 @@ const EditBookingForm = () => {
               r.roomNumber === room.room_number.toString() || 
               r.roomNumber === room.room_number
             );
-            console.log(`Room ${room.room_number} found roomRate:`, roomRate);
             if (roomRate) {
               roomData.customPrice = roomRate.customRate;
               roomData.extraBed = Boolean(roomRate.extraBed);
-              console.log(`Room ${room.room_number} extraBed from roomRate:`, roomData.extraBed);
+              roomData.extraBedStartDate = roomRate.extraBedStartDate || (roomRate.extraBed ? editBooking.checkInDate : null);
             }
           }
           
@@ -535,10 +529,16 @@ const EditBookingForm = () => {
           if (editBooking?.extraBedRooms && Array.isArray(editBooking.extraBedRooms)) {
             const isInExtraBedRooms = editBooking.extraBedRooms.includes(room.room_number.toString()) || 
                                      editBooking.extraBedRooms.includes(room.room_number);
-            console.log(`Room ${room.room_number} in extraBedRooms:`, isInExtraBedRooms);
             if (isInExtraBedRooms) {
               roomData.extraBed = true;
+              roomData.extraBedStartDate = roomData.extraBedStartDate || editBooking.checkInDate;
             }
+          }
+          
+          // Fallback for legacy bookings without roomRates
+          if (roomData.extraBed === undefined && editBooking?.extraBed) {
+            roomData.extraBed = true;
+            roomData.extraBedStartDate = editBooking.checkInDate;
           }
           
           // Default to false if still undefined
@@ -546,7 +546,6 @@ const EditBookingForm = () => {
             roomData.extraBed = false;
           }
           
-          console.log(`Room ${room.room_number} extraBed:`, roomData.extraBed);
           return roomData;
         });
         
