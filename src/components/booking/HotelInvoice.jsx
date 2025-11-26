@@ -118,7 +118,8 @@ export default function Invoice() {
         // Use the invoice data directly from API response
         const mappedData = response.data.invoice;
         
-        // Extra bed charges are now handled in the backend checkout controller
+        console.log('Invoice data from API:', mappedData);
+        console.log('Other charges:', mappedData.otherCharges);
         
         setInvoiceData(mappedData);
         
