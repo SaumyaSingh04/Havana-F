@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import Pagination from '../common/Pagination';
 
 const AllOrders = () => {
   const { axios } = useAppContext();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -236,6 +238,13 @@ const AllOrders = () => {
                     <div className="text-sm font-medium text-gray-900">
                       ₹{order.amount || 0}
                     </div>
+                    {(order.subtotal || order.sgstAmount || order.cgstAmount) && (
+                      <div className="text-xs text-gray-500">
+                        <div>Subtotal: ₹{order.subtotal || 0}</div>
+                        <div>SGST: ₹{order.sgstAmount || 0} ({order.sgstRate || 0}%)</div>
+                        <div>CGST: ₹{order.cgstAmount || 0} ({order.cgstRate || 0}%)</div>
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-semibold rounded ${getStatusColor(order.status)}`}>
@@ -258,6 +267,14 @@ const AllOrders = () => {
                           className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
                         >
                           Cancel
+                        </button>
+                      )}
+                      {(order.status === 'completed' || order.status === 'served') && (
+                        <button
+                          onClick={() => navigate(`/restaurant/invoice/${order._id}`, { state: { orderData: order } })}
+                          className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                        >
+                          Invoice
                         </button>
                       )}
                     </div>

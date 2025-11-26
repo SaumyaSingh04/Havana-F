@@ -1,251 +1,39 @@
-import { useState, useEffect } from 'react';
-import { useAppContext } from '../../context/AppContext';
-import { showToast } from '../../utils/toaster';
+import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useOrderManagement } from '../../hooks/useOrderManagement';
 
 const Order = () => {
-  const { axios } = useAppContext();
   const location = useLocation();
   const [isConnected] = useState(false);
+  
+  const {
+    menuItems,
+    categories,
+    staff,
+    tables,
+    cartItems,
+    isCartOpen,
+    isPlacingOrder,
+    searchQuery,
+    orderData,
+    filteredMenu,
+    gstRates,
+    setIsCartOpen,
+    setSearchQuery,
+    setOrderData,
+    setCartItems,
+    setGstRates,
+    handleAddToCart,
+    handleRemoveItem,
+    handleQuantityChange,
+    handleClearCart,
+    getSubtotal,
+    getTotalAmount,
+    getGstAmounts,
+    handlePlaceOrder
+  } = useOrderManagement(location);
 
-  const [menuItems, setMenuItems] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [staff, setStaff] = useState([]);
-  const [tables, setTables] = useState([]);
-  const [cartItems, setCartItems] = useState([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [orderData, setOrderData] = useState({
-    staffName: '',
-    staffId: '',
-    customerName: '',
-    tableNo: '',
-    items: [],
-    amount: 0
-  });
 
-  useEffect(() => {
-    fetchData();
-    
-    if (location.state?.tableNumber) {
-      setOrderData(prev => ({
-        ...prev,
-        tableNo: location.state.tableNumber
-      }));
-    }
-  }, [location.state]);
-
-  const fetchData = async () => {
-    try {
-      // Fetch items
-      try {
-        const token = localStorage.getItem('token');
-        const itemsRes = await axios.get('/api/menu-items', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const itemsData = itemsRes.data.data || itemsRes.data || [];
-        setMenuItems(Array.isArray(itemsData) ? itemsData : []);
-      } catch (error) {
-        console.error('Error fetching items:', error);
-        setMenuItems([]);
-      }
-      
-      // Fetch categories
-      try {
-        const categoriesRes = await axios.get('/api/restaurant-categories/all');
-        setCategories(categoriesRes.data || []);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      }
-      
-      // Fetch restaurant staff
-      try {
-        const token = localStorage.getItem('token');
-        const usersRes = await axios.get('/api/users', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        const usersData = usersRes.data || [];
-        
-        const restaurantStaff = usersData
-          .filter(user => user.role === 'restaurant' && user.restaurantRole === 'staff')
-          .map(member => ({
-            _id: member._id,
-            name: member.username,
-            username: member.username,
-            role: member.role
-          }));
-        
-        setStaff(restaurantStaff);
-      } catch (error) {
-        console.error('Error fetching staff:', error);
-        setStaff([]);
-      }
-      
-      // Fetch occupied rooms
-      try {
-        const token = localStorage.getItem('token');
-        const bookingRes = await axios.get('/api/bookings/all', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const bookingData = Array.isArray(bookingRes.data) ? bookingRes.data : (bookingRes.data.bookings || []);
-        
-        console.log('All booking data:', bookingData);
-        
-        const checkedInBookings = bookingData.filter(booking => booking.status === 'Checked In');
-        console.log('Checked in bookings:', checkedInBookings);
-        
-        const occupiedRooms = [];
-        checkedInBookings.forEach(booking => {
-          if (booking.roomNumber) {
-            const roomNumbers = booking.roomNumber.split(',').map(num => num.trim());
-            roomNumbers.forEach(roomNum => {
-              occupiedRooms.push({
-                _id: `${booking._id}_${roomNum}`,
-                tableNumber: roomNum,
-                status: 'occupied',
-                guestName: booking.name || 'Guest'
-              });
-            });
-          }
-        });
-        
-        console.log('Occupied rooms:', occupiedRooms);
-        setTables(occupiedRooms);
-      } catch (error) {
-        console.error('Error fetching bookings:', error);
-        setTables([]);
-      }
-      
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
-
-  const handleAddToCart = (item) => {
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(i => i._id === item._id);
-      if (existingItem) {
-        return prevItems.map(i =>
-          i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
-        );
-      } else {
-        return [...prevItems, { ...item, quantity: 1, note: '' }];
-      }
-    });
-  };
-
-  const handleRemoveItem = (itemId) => {
-    setCartItems(prevItems => prevItems.filter(item => item._id !== itemId));
-  };
-
-  const handleQuantityChange = (itemId, change) => {
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item._id === itemId ? { ...item, quantity: Math.max(1, item.quantity + change) } : item
-      )
-    );
-  };
-
-  const handleClearCart = () => {
-    setCartItems([]);
-  };
-
-  const getTotalAmount = () => {
-    return cartItems.reduce((total, item) => {
-      const price = item.Price || item.price || 0;
-      return total + (price * item.quantity);
-    }, 0);
-  };
-
-  const handlePlaceOrder = async () => {
-    if (isPlacingOrder) return;
-    
-    if (cartItems.length === 0) {
-      showToast.error('Please add items to cart first!');
-      return;
-    }
-    
-    if (!orderData.tableNo) {
-      showToast.error('Please select a room!');
-      return;
-    }
-    
-    setIsPlacingOrder(true);
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        showToast.error('Authentication token missing. Please login again.');
-        return;
-      }
-      
-      const orderItems = cartItems.map(item => ({
-        itemId: item._id,
-        itemName: item.name,
-        price: item.Price || 0,
-        quantity: item.quantity,
-        note: item.note || ''
-      }));
-      
-      const finalOrderData = {
-        staffName: orderData.customerName || 'Restaurant Staff',
-        customerName: orderData.customerName,
-        tableNo: orderData.tableNo,
-        items: orderItems,
-        notes: cartItems.map(item => item.note).filter(note => note).join(', ') || '',
-        amount: getTotalAmount(),
-        discount: 0,
-        isMembership: false,
-        isLoyalty: false
-      };
-      
-      const orderResponse = await axios.post('/api/restaurant-orders/create', finalOrderData, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      // Create KOT record
-      const kotData = {
-        kotNumber: `KOT-${Date.now()}`,
-        orderId: orderResponse.data._id,
-        orderType: 'restaurant',
-        tableNo: orderData.tableNo,
-        items: orderItems.map(item => ({
-          itemName: item.itemName,
-          quantity: item.quantity,
-          specialInstructions: item.note || ''
-        })),
-        status: 'pending'
-      };
-      
-      await axios.post('/api/kot/create', kotData, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      showToast.success('🎉 Order placed successfully!');
-      setCartItems([]);
-      setOrderData({ staffName: '', staffId: '', customerName: '', tableNo: '', items: [], amount: 0 });
-      setIsCartOpen(false);
-      
-    } catch (error) {
-      console.error('Error placing order:', error);
-      const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Failed to place order!';
-      showToast.error(errorMsg);
-    } finally {
-      setIsPlacingOrder(false);
-    }
-  };
-
-  const filteredMenu = menuItems.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="min-h-screen font-sans p-4 sm:p-6 bg-gradient-to-br from-[#f7f5ef] to-[#c3ad6b]/30">
@@ -259,7 +47,7 @@ const Order = () => {
             </span>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
           <div className="flex flex-col space-y-3">
             <label htmlFor="table-number" className="font-bold text-[#b39b5a]">Room Number</label>
             <select 
@@ -283,25 +71,6 @@ const Order = () => {
               ))}
             </select>
           </div>
-          {/* <div className="flex flex-col space-y-3">
-            <label htmlFor="staff" className="font-bold text-[#b39b5a]">Staff</label>
-            <select 
-              id="staff" 
-              value={orderData.staffId}
-              onChange={(e) => {
-                const selectedStaff = staff.find(s => s._id === e.target.value);
-                setOrderData({...orderData, staffId: e.target.value, staffName: selectedStaff?.name || selectedStaff?.username || ''});
-              }}
-              className="w-full rounded-xl p-4 border-2 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 text-gray-700 bg-white/80 backdrop-blur-sm transition-all duration-200"
-            >
-              <option value="">Select Staff</option>
-              {staff.map(member => (
-                <option key={member._id} value={member._id}>
-                  {member.name || member.username || 'Unknown Staff'}
-                </option>
-              ))}
-            </select>
-          </div> */}
           <div className="flex flex-col space-y-3">
             <label htmlFor="customerName" className="font-bold text-[#b39b5a]">Customer Name</label>
             <input
@@ -311,6 +80,42 @@ const Order = () => {
               onChange={(e) => setOrderData({...orderData, customerName: e.target.value})}
               className="w-full rounded-xl p-4 border-2 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 text-gray-700 bg-white/80 backdrop-blur-sm transition-all duration-200"
               placeholder="Customer Name"
+            />
+          </div>
+          <div className="flex flex-col space-y-3">
+            <label htmlFor="sgst-rate" className="font-bold text-[#b39b5a]">SGST Rate (%)</label>
+            <input
+              id="sgst-rate"
+              type="number"
+              step="0.1"
+              min="0"
+              max="50"
+              value={gstRates.sgstRate}
+              onChange={(e) => setGstRates({
+                ...gstRates,
+                sgstRate: parseFloat(e.target.value) || 0,
+                gstRate: (parseFloat(e.target.value) || 0) + gstRates.cgstRate
+              })}
+              className="w-full rounded-xl p-4 border-2 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 text-gray-700 bg-white/80 backdrop-blur-sm transition-all duration-200"
+              placeholder="2.5"
+            />
+          </div>
+          <div className="flex flex-col space-y-3">
+            <label htmlFor="cgst-rate" className="font-bold text-[#b39b5a]">CGST Rate (%)</label>
+            <input
+              id="cgst-rate"
+              type="number"
+              step="0.1"
+              min="0"
+              max="50"
+              value={gstRates.cgstRate}
+              onChange={(e) => setGstRates({
+                ...gstRates,
+                cgstRate: parseFloat(e.target.value) || 0,
+                gstRate: gstRates.sgstRate + (parseFloat(e.target.value) || 0)
+              })}
+              className="w-full rounded-xl p-4 border-2 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 text-gray-700 bg-white/80 backdrop-blur-sm transition-all duration-200"
+              placeholder="2.5"
             />
           </div>
         </div>
@@ -484,8 +289,25 @@ const Order = () => {
 
             {cartItems.length > 0 && (
               <div className="border-t p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="font-bold text-lg text-gray-800">Total: ₹{getTotalAmount().toFixed(2)}</span>
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-medium">₹{getGstAmounts().subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">SGST ({gstRates.sgstRate}%):</span>
+                    <span className="font-medium">₹{getGstAmounts().sgstAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">CGST ({gstRates.cgstRate}%):</span>
+                    <span className="font-medium">₹{getGstAmounts().cgstAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-lg text-gray-800">Total:</span>
+                      <span className="font-bold text-lg text-gray-800">₹{getGstAmounts().total.toFixed(2)}</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <button

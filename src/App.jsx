@@ -34,6 +34,8 @@ import Order from './components/restaurant/Order';
 import LiveOrders from './components/restaurant/LiveOrders';
 import AllOrders from './components/restaurant/AllOrders';
 import KOT from './components/restaurant/KOT';
+import GSTSettings from './components/restaurant/GSTSettings';
+import RestaurantInvoice from './components/restaurant/RestaurantInvoice';
 
 import './App.css'
 
@@ -97,6 +99,8 @@ function App() {
             <Route path="restaurant/live-orders" element={<LiveOrders />} />
             <Route path="restaurant/all-orders" element={<AllOrders />} />
             <Route path="restaurant/kot" element={<KOT />} />
+            <Route path="restaurant/gst-settings" element={<GSTSettings />} />
+            <Route path="restaurant/invoice/:orderId" element={<RestaurantInvoice />} />
             
             {/* Checkout Routes */}
             <Route path="hotel-checkout" element={<HotelCheckout />} />

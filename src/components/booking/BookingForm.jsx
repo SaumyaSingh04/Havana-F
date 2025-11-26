@@ -304,8 +304,14 @@ export const AppProvider = ({ children }) => {
     roomGuestDetails: [],
     extraBedCharge: 500,
     rate: 0,
-    cgstRate: 2.5,
-    sgstRate: 2.5,
+    cgstRate: (() => {
+      const savedRates = localStorage.getItem('defaultGstRates');
+      return savedRates ? JSON.parse(savedRates).cgstRate || 2.5 : 2.5;
+    })(),
+    sgstRate: (() => {
+      const savedRates = localStorage.getItem('defaultGstRates');
+      return savedRates ? JSON.parse(savedRates).sgstRate || 2.5 : 2.5;
+    })(),
     taxIncluded: false,
     serviceCharge: false,
     arrivedFrom: '',
@@ -406,7 +412,7 @@ export const AppProvider = ({ children }) => {
 
     } catch (error) {
       console.error('Error fetching data:', error);
-      showToast(`Failed to fetch initial data: ${error.message}. Ensure your server is running.`, 'error');
+      showToast.error(`Failed to fetch initial data: ${error.message}. Ensure your server is running.`);
     }
   };
 
@@ -421,7 +427,16 @@ export const AppProvider = ({ children }) => {
       idProofType: '', idProofNumber: '', idProofImageUrl: '', idProofImageUrl2: '',
       photoUrl: '', roomNumber: '', planPackage: '', noOfAdults: 1, noOfChildren: 0,
       roomGuestDetails: [],
-      rate: 0, taxIncluded: false, serviceCharge: false, arrivedFrom: '',
+      rate: 0, 
+      cgstRate: (() => {
+        const savedRates = localStorage.getItem('defaultGstRates');
+        return savedRates ? JSON.parse(savedRates).cgstRate || 2.5 : 2.5;
+      })(),
+      sgstRate: (() => {
+        const savedRates = localStorage.getItem('defaultGstRates');
+        return savedRates ? JSON.parse(savedRates).sgstRate || 2.5 : 2.5;
+      })(),
+      taxIncluded: false, serviceCharge: false, arrivedFrom: '',
       destination: '', remark: '', businessSource: '', marketSegment: '',
       purposeOfVisit: '', discountPercent: 0, discountRoomSource: 0, paymentMode: '',
       paymentStatus: 'Pending', bookingRefNo: '', mgmtBlock: 'No', billingInstruction: '',
@@ -788,7 +803,7 @@ const App = () => {
 
   const handleFetchBooking = async () => {
     if (!searchGRC.trim()) {
-      showToast("Please enter a GRC number to search.", 'error');
+      showToast.error("Please enter a GRC number to search.");
       return;
     }
     setLoading(true);
@@ -861,6 +876,14 @@ const App = () => {
           noOfAdults: 1,
           noOfChildren: 0,
           rate: 0,
+          cgstRate: (() => {
+            const savedRates = localStorage.getItem('defaultGstRates');
+            return savedRates ? JSON.parse(savedRates).cgstRate || 2.5 : 2.5;
+          })(),
+          sgstRate: (() => {
+            const savedRates = localStorage.getItem('defaultGstRates');
+            return savedRates ? JSON.parse(savedRates).sgstRate || 2.5 : 2.5;
+          })(),
           taxIncluded: false,
           serviceCharge: false,
           arrivedFrom: '',
@@ -919,9 +942,9 @@ const App = () => {
           setShowCompanyDetails(true);
         }
 
-        showToast(`Customer details loaded from GRC ${searchGRC}. New GRC ${newGrcNo} generated for new booking.`, 'success');
+        showToast.success(`Customer details loaded from GRC ${searchGRC}. New GRC ${newGrcNo} generated for new booking.`);
       } else {
-        showToast("No booking found with that GRC number.", 'error');
+        showToast.error("No booking found with that GRC number.");
       }
     } catch (error) {
       console.error("Error fetching booking:", error);
@@ -930,16 +953,16 @@ const App = () => {
         const status = error.response.status;
         const message = error.response.data?.message || error.response.data?.error || 'Unknown server error';
         if (status === 404) {
-          showToast("No booking found with that GRC number.", 'error');
+          showToast.error("No booking found with that GRC number.");
         } else {
-          showToast(`Server error (${status}): ${message}`, 'error');
+          showToast.error(`Server error (${status}): ${message}`);
         }
       } else if (error.request) {
         // Network error
-        showToast("Network error. Please check your internet connection and try again.", 'error');
+        showToast.error("Network error. Please check your internet connection and try again.");
       } else {
         // Other error
-        showToast(`Error: ${error.message}`, 'error');
+        showToast.error(`Error: ${error.message}`);
       }
     } finally {
       setLoading(false);
@@ -948,7 +971,7 @@ const App = () => {
 
   const handleCustomerSearch = async () => {
     if (!customerSearchQuery.trim() || customerSearchQuery.trim().length < 2) {
-      showToast("Please enter at least 2 characters to search.", 'error');
+      showToast.error("Please enter at least 2 characters to search.");
       return;
     }
     setLoading(true);
@@ -959,14 +982,14 @@ const App = () => {
         setCustomerSearchResults(response.data.customers || []);
         setShowCustomerSearch(true);
         if (response.data.customers.length === 0) {
-          showToast("No customers found matching your search.", 'error');
+          showToast.error("No customers found matching your search.");
         } else {
-          showToast(`Found ${response.data.customers.length} customer(s).`, 'success');
+          showToast.success(`Found ${response.data.customers.length} customer(s).`);
         }
       }
     } catch (error) {
       console.error("Customer search error:", error);
-      showToast("Failed to search customers. Please try again.", 'error');
+      showToast.error("Failed to search customers. Please try again.");
       setCustomerSearchResults([]);
     } finally {
       setLoading(false);
@@ -986,7 +1009,7 @@ const App = () => {
   
   const handleCheckAvailability = async () => {
     if (!formData.checkInDate || !formData.checkOutDate) {
-      showToast("Please select both check-in and check-out dates.", 'error');
+      showToast.error("Please select both check-in and check-out dates.");
       return;
     }
     setLoading(true);
@@ -1040,14 +1063,14 @@ const App = () => {
 
 
       if (trulyAvailableRooms.length === 0) {
-        showToast("No rooms available for the selected dates.", 'error');
+        showToast.error("No rooms available for the selected dates.");
       } else {
-        showToast(`Found ${trulyAvailableRooms.length} available rooms.`, 'success');
+        showToast.success(`Found ${trulyAvailableRooms.length} available rooms.`);
       }
 
     } catch (error) {
       console.error('Availability check error:', error);
-      showToast(`Failed to check availability: ${error.message}`, 'error');
+      showToast.error(`Failed to check availability: ${error.message}`);
       setAllRooms([]);
       const resetCategories = allCategories.map(cat => ({ ...cat, availableRoomsCount: 0 }));
       setAllCategories(resetCategories);
@@ -1129,62 +1152,62 @@ const App = () => {
   const validateForm = () => {
     // Required fields
     if (!validateRequired(formData.name)) {
-      showToast('Guest name is required', 'error');
+      showToast.error('Guest name is required');
       return false;
     }
     
     if (!formData.checkInDate || !formData.checkOutDate) {
-      showToast('Check-in and check-out dates are required', 'error');
+      showToast.error('Check-in and check-out dates are required');
       return false;
     }
     
     if (!validateDateRange(formData.checkInDate, formData.checkOutDate)) {
-      showToast('Check-out date must be after check-in date', 'error');
+      showToast.error('Check-out date must be after check-in date');
       return false;
     }
     
     if (selectedRooms.length === 0) {
-      showToast('Please select at least one room', 'error');
+      showToast.error('Please select at least one room');
       return false;
     }
     
     if (!formData.categoryId) {
-      showToast('Please select a room category', 'error');
+      showToast.error('Please select a room category');
       return false;
     }
     
     // Email validation
     if (formData.email && !validateEmail(formData.email)) {
-      showToast('Please enter a valid email address', 'error');
+      showToast.error('Please enter a valid email address');
       return false;
     }
     
     // Phone validation
     if (formData.mobileNo && !validatePhone(formData.mobileNo)) {
-      showToast('Please enter a valid 10-digit mobile number', 'error');
+      showToast.error('Please enter a valid 10-digit mobile number');
       return false;
     }
     
     // Rate validation
     if (formData.rate && !validatePositiveNumber(formData.rate)) {
-      showToast('Rate must be a positive number', 'error');
+      showToast.error('Rate must be a positive number');
       return false;
     }
     
     // GST validation
     if (formData.companyGSTIN && !validateGST(formData.companyGSTIN)) {
-      showToast('Please enter a valid GST number', 'error');
+      showToast.error('Please enter a valid GST number');
       return false;
     }
     
     // ID proof validation
     if (formData.idProofType && formData.idProofNumber) {
       if (formData.idProofType === 'PAN' && !validatePAN(formData.idProofNumber)) {
-        showToast('Please enter a valid PAN number', 'error');
+        showToast.error('Please enter a valid PAN number');
         return false;
       }
       if (formData.idProofType === 'Aadhaar' && !validateAadhaar(formData.idProofNumber)) {
-        showToast('Please enter a valid 12-digit Aadhaar number', 'error');
+        showToast.error('Please enter a valid 12-digit Aadhaar number');
         return false;
       }
     }
@@ -1247,8 +1270,14 @@ const App = () => {
     cleanFormData.rate = Number(cleanFormData.rate) || 0;
     cleanFormData.discountPercent = Number(cleanFormData.discountPercent) || 0;
     cleanFormData.days = Number(cleanFormData.days) || 0;
-    cleanFormData.cgstRate = Number(cleanFormData.cgstRate) || 2.5;
-    cleanFormData.sgstRate = Number(cleanFormData.sgstRate) || 2.5;
+    cleanFormData.cgstRate = Number(cleanFormData.cgstRate) || (() => {
+      const savedRates = localStorage.getItem('defaultGstRates');
+      return savedRates ? JSON.parse(savedRates).cgstRate || 2.5 : 2.5;
+    })();
+    cleanFormData.sgstRate = Number(cleanFormData.sgstRate) || (() => {
+      const savedRates = localStorage.getItem('defaultGstRates');
+      return savedRates ? JSON.parse(savedRates).sgstRate || 2.5 : 2.5;
+    })();
     
 
     
@@ -1259,7 +1288,7 @@ const App = () => {
         }
       });
 
-      showToast("Booking submitted successfully!", 'success');
+      showToast.success("Booking submitted successfully!");
       alert("🎉 Booking submitted successfully! You will be redirected to the booking page.");
       resetForm();
       // Navigate to booking page after successful submission
@@ -1274,17 +1303,17 @@ const App = () => {
         
         // Handle specific room availability error
         if (errorMsg.includes('Not enough available rooms') || errorMsg.includes('available rooms')) {
-          showToast(`${errorMsg}. Please check room availability again and select different rooms.`, 'error');
+          showToast.error(`${errorMsg}. Please check room availability again and select different rooms.`);
           // Clear selected rooms and suggest re-checking availability
           setSelectedRooms([]);
           setHasCheckedAvailability(false);
         } else {
-          showToast(`Failed to submit booking: ${errorMsg}`, 'error');
+          showToast.error(`Failed to submit booking: ${errorMsg}`);
         }
       } else if (error.request) {
-        showToast('Network error. Please check your connection and try again.', 'error');
+        showToast.error('Network error. Please check your connection and try again.');
       } else {
-        showToast(`An unexpected error occurred: ${error.message}`, 'error');
+        showToast.error(`An unexpected error occurred: ${error.message}`);
       }
     } finally {
       setLoading(false);

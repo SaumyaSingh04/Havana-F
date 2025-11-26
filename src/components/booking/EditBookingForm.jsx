@@ -207,8 +207,14 @@ const EditBookingForm = () => {
     noOfChildren: 0,
     roomGuestDetails: [],
     rate: 0,
-    cgstRate: 2.5,
-    sgstRate: 2.5,
+    cgstRate: (() => {
+      const savedRates = localStorage.getItem('defaultGstRates');
+      return savedRates ? JSON.parse(savedRates).cgstRate || 2.5 : 2.5;
+    })(),
+    sgstRate: (() => {
+      const savedRates = localStorage.getItem('defaultGstRates');
+      return savedRates ? JSON.parse(savedRates).sgstRate || 2.5 : 2.5;
+    })(),
     taxIncluded: false,
     serviceCharge: false,
     arrivedFrom: '',
@@ -290,8 +296,14 @@ const EditBookingForm = () => {
         roomGuestDetails: editBooking.roomGuestDetails || [],
         extraBedCharge: editBooking.extraBedCharge || 500,
         rate: editBooking.taxableAmount || editBooking.rate || 0,
-        cgstRate: editBooking.cgstRate !== undefined ? editBooking.cgstRate * 100 : 2.5,
-        sgstRate: editBooking.sgstRate !== undefined ? editBooking.sgstRate * 100 : 2.5,
+        cgstRate: editBooking.cgstRate !== undefined ? editBooking.cgstRate : (() => {
+          const savedRates = localStorage.getItem('defaultGstRates');
+          return savedRates ? JSON.parse(savedRates).cgstRate || 2.5 : 2.5;
+        })(),
+        sgstRate: editBooking.sgstRate !== undefined ? editBooking.sgstRate : (() => {
+          const savedRates = localStorage.getItem('defaultGstRates');
+          return savedRates ? JSON.parse(savedRates).sgstRate || 2.5 : 2.5;
+        })(),
         taxIncluded: editBooking.taxIncluded || false,
         serviceCharge: editBooking.serviceCharge || false,
         arrivedFrom: editBooking.arrivedFrom || '',
@@ -758,13 +770,13 @@ const EditBookingForm = () => {
       console.log('Sending update data:', updateData);
       const response = await axios.put(`/api/bookings/update/${editBooking._id}`, updateData);
       console.log('Update response:', response.data);
-      showToast('Booking updated successfully!', 'success');
+      showToast.success('Booking updated successfully!');
       navigate('/booking');
     } catch (error) {
       console.error('Error updating booking:', error);
       console.error('Error response:', error.response?.data);
       const errorMessage = error.response?.data?.error || error.message || 'Failed to update booking';
-      showToast(errorMessage, 'error');
+      showToast.error(errorMessage);
     }
   };
 
