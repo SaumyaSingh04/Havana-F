@@ -21,14 +21,32 @@ const HotelCheckout = ({ booking, onClose, onCheckoutComplete }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('/api/checkout/create', {
-        bookingId: booking._id || booking.id
-      }, {
+      const bookingId = booking._id || booking.id;
+      
+      // Get comprehensive charges using our new endpoint
+      const chargesResponse = await axios.get(`/api/bookings/charges/booking/${bookingId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      setCheckoutData(response.data.checkout);
-      setPaymentAmount(response.data.checkout.totalAmount?.toString() || '0');
+      console.log('Charges API response:', chargesResponse.data);
+      const charges = chargesResponse.data.charges;
+      
+      // Create checkout data structure
+      const checkoutData = {
+        _id: `checkout_${bookingId}`,
+        bookingId: bookingId,
+        bookingCharges: charges.roomCharges.totalRoomCharges || 0,
+        restaurantCharges: charges.summary.totalRestaurantCharges || 0,
+        roomServiceCharges: (charges.summary.totalServiceCharges || 0) - (charges.summary.totalRestaurantCharges || 0),
+        laundryCharges: 0, // Will be added separately if needed
+        inspectionCharges: 0, // Will be added separately if needed
+        totalAmount: charges.summary.grandTotal || 0,
+        status: 'pending'
+      };
+      
+      console.log('Processed checkout data:', checkoutData);
+      setCheckoutData(checkoutData);
+      setPaymentAmount(checkoutData.totalAmount?.toString() || '0');
     } catch (error) {
       console.error('Error fetching checkout data:', error);
       showToast('Failed to load checkout data', 'error');
