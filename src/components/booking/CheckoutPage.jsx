@@ -131,17 +131,59 @@ const CheckoutPage = () => {
         console.log('No room service charges found');
       }
       
-      const checkoutResponse = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/checkout/create`, {
+      // Get comprehensive charges using our new endpoint
+      let charges = null;
+      try {
+        const chargesResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/charges/booking/${bookingId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('Charges API response:', chargesResponse.data);
+        charges = chargesResponse.data.charges;
+        console.log('Extracted charges:', charges);
+      } catch (error) {
+        console.error('Error fetching charges:', error);
+        // Fallback to old checkout API if charges endpoint fails
+        const checkoutResponse = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/checkout/create`, {
+          bookingId: bookingId,
+          roomId: roomId
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const fallbackData = checkoutResponse.data.checkout;
+        charges = {
+          roomCharges: { totalRoomCharges: fallbackData.bookingCharges || 0 },
+          summary: {
+            totalRoomCharges: fallbackData.bookingCharges || 0,
+            totalRestaurantCharges: 0,
+            totalServiceCharges: 0
+          },
+          restaurantOrders: [],
+          services: []
+        };
+      }
+      
+      // Create checkout data structure
+      const checkoutData = {
+        _id: `checkout_${bookingId}`,
         bookingId: bookingId,
-        roomId: roomId
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+        bookingCharges: charges.roomCharges.totalRoomCharges || 0,
+        restaurantCharges: charges.summary.totalRestaurantCharges || 0,
+        roomServiceCharges: (charges.summary.totalServiceCharges || 0) - (charges.summary.totalRestaurantCharges || 0),
+        laundryCharges: laundryCharges,
+        inspectionCharges: inspectionCharges,
+        totalAmount: (charges.roomCharges.totalRoomCharges || 0) + (charges.summary.totalRestaurantCharges || 0) + (charges.summary.totalServiceCharges || 0) + laundryCharges + inspectionCharges,
+        status: 'pending',
+        serviceItems: {
+          restaurant: charges.restaurantOrders || [],
+          services: charges.services || [],
+          laundry: [],
+          inspection: []
+        }
+      };
       
-      console.log('Checkout API response:', checkoutResponse.data);
-      
-      const checkoutData = checkoutResponse.data.checkout;
-      console.log('Checkout data from API:', checkoutData);
+      console.log('Processed checkout data:', checkoutData);
       
       // Use the charges already calculated by the API
       // Don't add additional charges as they're already included
