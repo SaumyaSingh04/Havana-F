@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import ashokaLogo from '../../assets/hawana png11.png';
 import { RiPhoneFill, RiMailFill } from 'react-icons/ri';
+import { FaWhatsapp } from 'react-icons/fa';
 import { useAppContext } from '../../context/AppContext';
 
 export default function Invoice() {
@@ -269,6 +270,30 @@ export default function Invoice() {
     return (baseAmount + sgst + cgst + otherChargesTotal + roundOff).toFixed(2);
   };
 
+  const shareOnWhatsApp = () => {
+    const message = `🏨 *HAVANA HOTEL INVOICE*
+
+📋 *Bill Details:*
+• Bill No: ${invoiceData.invoiceDetails?.billNo}
+• Date: ${invoiceData.invoiceDetails?.billDate}
+• Room: ${invoiceData.invoiceDetails?.roomNo}
+• Guest: ${invoiceData.clientDetails?.name}
+
+💰 *Amount Summary:*
+• Subtotal: ₹${calculateTotal()}
+• CGST: ₹${invoiceData.payment?.cgst?.toFixed(2) || '0.00'}
+• SGST: ₹${invoiceData.payment?.sgst?.toFixed(2) || '0.00'}
+• *Total Amount: ₹${calculateNetTotal()}*
+
+📞 Contact: +91-XXXX-XXXXXX
+🌐 Website: havana-hotel.com
+
+Thank you for choosing Havana Hotel! 🙏`;
+    
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white p-2 sm:p-4 flex items-center justify-center">
@@ -399,6 +424,13 @@ export default function Invoice() {
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50"
             >
               {saving ? 'Saving...' : (isEditing ? 'Save' : 'Edit')}
+            </button>
+            <button
+              onClick={shareOnWhatsApp}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm flex items-center gap-2"
+            >
+              <FaWhatsapp className="text-lg" />
+              Share
             </button>
             <button
               onClick={() => window.print()}

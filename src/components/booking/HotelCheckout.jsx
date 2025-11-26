@@ -31,9 +31,26 @@ const HotelCheckout = ({ booking, onClose, onCheckoutComplete }) => {
       console.log('Charges API response:', chargesResponse.data);
       const charges = chargesResponse.data.charges;
       
+      // Create checkout record first if it doesn't exist
+      let checkoutRecord;
+      try {
+        const existingCheckout = await axios.get(`/api/checkout/booking/${bookingId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        checkoutRecord = existingCheckout.data.checkout;
+      } catch (error) {
+        // Create new checkout if not found
+        const createResponse = await axios.post('/api/checkout/create', {
+          bookingId: bookingId
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        checkoutRecord = createResponse.data.checkout;
+      }
+      
       // Create checkout data structure
       const checkoutData = {
-        _id: `checkout_${bookingId}`,
+        _id: checkoutRecord._id,
         bookingId: bookingId,
         bookingCharges: charges.roomCharges.totalRoomCharges || 0,
         restaurantCharges: charges.summary.totalRestaurantCharges || 0,
@@ -49,7 +66,7 @@ const HotelCheckout = ({ booking, onClose, onCheckoutComplete }) => {
       setPaymentAmount(checkoutData.totalAmount?.toString() || '0');
     } catch (error) {
       console.error('Error fetching checkout data:', error);
-      showToast('Failed to load checkout data', 'error');
+      showToast.error('Failed to load checkout data');
     } finally {
       setLoading(false);
     }
@@ -57,7 +74,7 @@ const HotelCheckout = ({ booking, onClose, onCheckoutComplete }) => {
 
   const processPayment = async () => {
     if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
-      showToast('Please enter valid payment amount', 'error');
+      showToast.error('Please enter valid payment amount');
       return;
     }
 
@@ -76,10 +93,10 @@ const HotelCheckout = ({ booking, onClose, onCheckoutComplete }) => {
       // The updatePaymentStatus function will handle booking and room updates automatically
 
       setStep(3);
-      showToast('Payment processed successfully!', 'success');
+      showToast.success('Payment processed successfully!');
     } catch (error) {
       console.error('Error processing payment:', error);
-      showToast('Failed to process payment', 'error');
+      showToast.error('Failed to process payment');
     } finally {
       setLoading(false);
     }
@@ -88,7 +105,7 @@ const HotelCheckout = ({ booking, onClose, onCheckoutComplete }) => {
   const completeCheckout = () => {
     onCheckoutComplete?.();
     onClose();
-    showToast('Checkout completed successfully!', 'success');
+    showToast.success('Checkout completed successfully!');
   };
 
   if (loading && !checkoutData) {
