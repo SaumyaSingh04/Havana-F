@@ -18,6 +18,7 @@ export default function Invoice() {
   const [saving, setSaving] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [gstRates, setGstRates] = useState({ cgstRate: 2.5, sgstRate: 2.5 });
+  const [showPaxDetails, setShowPaxDetails] = useState(false);
 
   // Fetch invoice data from checkout API or use restaurant order data
   const fetchInvoiceData = async (checkoutId) => {
@@ -436,11 +437,10 @@ export default function Invoice() {
           </div>
           <div className="flex gap-2 no-print">
             <button
-              onClick={isEditing ? saveInvoiceUpdates : () => setIsEditing(true)}
-              disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm disabled:opacity-50"
+              onClick={() => setShowPaxDetails(!showPaxDetails)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
             >
-              {saving ? 'Saving...' : (isEditing ? 'Save' : 'Edit')}
+              {showPaxDetails ? 'Hide PAX' : 'Show PAX'}
             </button>
             <button
               onClick={shareInvoicePDF}
@@ -462,85 +462,19 @@ export default function Invoice() {
         <div className="client-details-grid grid grid-cols-1 lg:grid-cols-2 text-xs border border-black mb-4">
           <div className="client-details-left border-r border-black p-2">
             <p><span className="font-bold">GSTIN No. : </span>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={invoiceData.clientDetails?.gstin || ''}
-                  onChange={(e) => {
-                    const newGstin = e.target.value;
-                    setInvoiceData({
-                      ...invoiceData,
-                      clientDetails: {...invoiceData.clientDetails, gstin: newGstin}
-                    });
-                    if (newGstin.length >= 15) {
-                      fetchGSTDetails(newGstin);
-                    }
-                  }}
-                  className="border px-1 ml-1 text-xs w-32"
-                />
-              ) : (bookingData?.companyGSTIN || invoiceData.clientDetails?.gstin || '')}
+              {bookingData?.companyGSTIN || invoiceData.clientDetails?.gstin || ''}
             </p>
             <div className="client-info-grid grid grid-cols-3 gap-x-1 gap-y-1">
               <p className="col-span-1">Name</p>
-              <p className="col-span-2">: {isEditing ? (
-                  <input
-                    type="text"
-                    value={invoiceData.clientDetails?.name || ''}
-                    onChange={(e) => setInvoiceData({
-                      ...invoiceData,
-                      clientDetails: {...invoiceData.clientDetails, name: e.target.value}
-                    })}
-                    className="border px-1 ml-1 text-xs w-32"
-                  />
-                ) : invoiceData.clientDetails?.name}</p>
+              <p className="col-span-2">: {invoiceData.clientDetails?.name}</p>
               <p className="col-span-1">Address</p>
-              <p className="col-span-2">: {isEditing ? (
-                  <input
-                    type="text"
-                    value={invoiceData.clientDetails?.address || ''}
-                    onChange={(e) => setInvoiceData({
-                      ...invoiceData,
-                      clientDetails: {...invoiceData.clientDetails, address: e.target.value}
-                    })}
-                    className="border px-1 ml-1 text-xs w-32"
-                  />
-                ) : invoiceData.clientDetails?.address}</p>
+              <p className="col-span-2">: {invoiceData.clientDetails?.address}</p>
               <p className="col-span-1">City</p>
-              <p className="col-span-2">: {isEditing ? (
-                  <input
-                    type="text"
-                    value={invoiceData.clientDetails?.city || ''}
-                    onChange={(e) => setInvoiceData({
-                      ...invoiceData,
-                      clientDetails: {...invoiceData.clientDetails, city: e.target.value}
-                    })}
-                    className="border px-1 ml-1 text-xs w-32"
-                  />
-                ) : invoiceData.clientDetails?.city}</p>
+              <p className="col-span-2">: {invoiceData.clientDetails?.city}</p>
               <p className="col-span-1">Company</p>
-              <p className="col-span-2">{isEditing ? (
-                  <input
-                    type="text"
-                    value={invoiceData.clientDetails?.company || ''}
-                    onChange={(e) => setInvoiceData({
-                      ...invoiceData,
-                      clientDetails: {...invoiceData.clientDetails, company: e.target.value}
-                    })}
-                    className="border px-1 ml-1 text-xs w-32"
-                  />
-                ) : `: ${bookingData?.companyName || invoiceData.clientDetails?.company || ''}`}</p>
+              <p className="col-span-2">: {bookingData?.companyName || invoiceData.clientDetails?.company || ''}</p>
               <p className="col-span-1">Mobile No.</p>
-              <p className="col-span-2">: {isEditing ? (
-                  <input
-                    type="text"
-                    value={invoiceData.clientDetails?.mobileNo || ''}
-                    onChange={(e) => setInvoiceData({
-                      ...invoiceData,
-                      clientDetails: {...invoiceData.clientDetails, mobileNo: e.target.value}
-                    })}
-                    className="border px-1 ml-1 text-xs w-32"
-                  />
-                ) : invoiceData.clientDetails?.mobileNo}</p>
+              <p className="col-span-2">: {invoiceData.clientDetails?.mobileNo}</p>
             </div>
           </div>
 
@@ -552,21 +486,32 @@ export default function Invoice() {
               <p className="font-medium">: {invoiceData.invoiceDetails?.grcNo}</p>
               <p className="font-bold">Room No./Type</p>
               <p className="font-medium">: {invoiceData.invoiceDetails?.roomNo} {invoiceData.invoiceDetails?.roomType}</p>
-              <p className="font-bold">PAX</p>
+              {showPaxDetails && (
+                <>
+                  <p className="font-bold">PAX</p>
+                  <p className="font-medium">
+                    {bookingData?.roomGuestDetails && bookingData.roomGuestDetails.length > 0 ? (
+                      <>
+                        : {bookingData.roomGuestDetails.reduce((sum, room) => sum + room.adults + room.children, 0)} Adult: {bookingData.roomGuestDetails.reduce((sum, room) => sum + room.adults, 0)} Children: {bookingData.roomGuestDetails.reduce((sum, room) => sum + room.children, 0)}
+                      </>
+                    ) : (
+                      `: ${invoiceData.invoiceDetails?.pax} Adult: ${invoiceData.invoiceDetails?.adult}`
+                    )}
+                  </p>
+                </>
+              )}
+              <p className="font-bold">Rooms</p>
               <p className="font-medium">
                 {bookingData?.roomGuestDetails && bookingData.roomGuestDetails.length > 0 ? (
                   <>
-                    : {bookingData.roomGuestDetails.reduce((sum, room) => sum + room.adults + room.children, 0)} Adult: {bookingData.roomGuestDetails.reduce((sum, room) => sum + room.adults, 0)} Children: {bookingData.roomGuestDetails.reduce((sum, room) => sum + room.children, 0)}
-                    <div className="text-xs mt-1">
-                      {bookingData.roomGuestDetails.map((room, index) => (
-                        <div key={index}>
-                          Room {room.roomNumber}: {room.adults}A, {room.children}C
-                        </div>
-                      ))}
-                    </div>
+                    : {bookingData.roomGuestDetails.map((room, index) => (
+                      <span key={index}>
+                        Room {room.roomNumber}{index < bookingData.roomGuestDetails.length - 1 ? ', ' : ''}
+                      </span>
+                    ))}
                   </>
                 ) : (
-                  `: ${invoiceData.invoiceDetails?.pax} Adult: ${invoiceData.invoiceDetails?.adult}`
+                  `: ${invoiceData.invoiceDetails?.roomNo}`
                 )}
               </p>
               <p className="font-bold">CheckIn Date</p>
