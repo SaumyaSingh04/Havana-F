@@ -1541,7 +1541,23 @@ const App = () => {
                 required
               />
             </div>
-            <div className="flex items-end md:col-span-2">
+            <div className="space-y-2">
+              <Label htmlFor="planPackage">Package Plan</Label>
+              <Select
+                id="planPackage"
+                name="planPackage"
+                value={formData.planPackage}
+                onChange={handleChange}
+              >
+                <option value="">Select Package Plan</option>
+                <option value="EP">EP – Room Only</option>
+                <option value="CP">CP – Room + Breakfast</option>
+                <option value="MAP">MAP – Room + Breakfast + Lunch/Dinner</option>
+                <option value="AP">AP – Room + All Meals</option>
+                <option value="AI">AI – All Inclusive</option>
+              </Select>
+            </div>
+            <div className="flex items-end">
               <Button
                 onClick={handleCheckAvailability}
                 disabled={isCheckAvailabilityDisabled}
@@ -2259,17 +2275,6 @@ const App = () => {
                   Selected: {selectedRooms.map(r => r.room_number).join(', ')}
                 </p>
               )}
-            </div>
-
-
-            <div className="space-y-2">
-              <Label htmlFor="planPackage">Package Plan</Label>
-              <Input
-                id="planPackage"
-                name="planPackage"
-                value={formData.planPackage}
-                onChange={handleChange}
-              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="timeIn">Check-in Time</Label>
