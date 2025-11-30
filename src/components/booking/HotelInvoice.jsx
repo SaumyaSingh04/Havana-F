@@ -412,7 +412,7 @@ export default function Invoice() {
           <div className="contact-info flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
             <div className="text-xs flex items-center space-x-2">
                 <RiPhoneFill className="text-lg text-yellow-600" />
-                <span>+91-XXXX-XXXXXX</span>
+                <span>+91-9451903390</span>
             </div>
             <div className="text-xs flex items-center space-x-2">
                 <RiMailFill className="text-lg text-yellow-600" />
@@ -469,7 +469,7 @@ export default function Invoice() {
                   }}
                   className="border px-1 ml-1 text-xs w-32"
                 />
-              ) : ''}
+              ) : (bookingData?.companyGSTIN || invoiceData.clientDetails?.gstin || '')}
             </p>
             <div className="client-info-grid grid grid-cols-3 gap-x-1 gap-y-1">
               <p className="col-span-1">Name</p>
@@ -519,7 +519,7 @@ export default function Invoice() {
                     })}
                     className="border px-1 ml-1 text-xs w-32"
                   />
-                ) : (invoiceData.clientDetails?.company?.startsWith(':') ? invoiceData.clientDetails.company : `: ${invoiceData.clientDetails?.company || ''}`)}</p>
+                ) : `: ${bookingData?.companyName || invoiceData.clientDetails?.company || ''}`}</p>
               <p className="col-span-1">Mobile No.</p>
               <p className="col-span-2">: {isEditing ? (
                   <input
@@ -564,6 +564,21 @@ export default function Invoice() {
               <p className="font-medium">: {invoiceData.invoiceDetails?.checkInDate}</p>
               <p className="font-bold">CheckOut Date</p>
               <p className="font-medium">: {invoiceData.invoiceDetails?.checkOutDate}</p>
+              {bookingData?.planPackage && (
+                <>
+                  <p className="font-bold">Package Plan</p>
+                  <p className="font-medium">: {(() => {
+                    const planMap = {
+                      'EP': 'EP – Room Only',
+                      'CP': 'CP – Room + Breakfast',
+                      'MAP': 'MAP – Room + Breakfast + Lunch/Dinner',
+                      'AP': 'AP – Room + All Meals',
+                      'AI': 'AI – All Inclusive'
+                    };
+                    return planMap[bookingData.planPackage] || bookingData.planPackage;
+                  })()}</p>
+                </>
+              )}
               {bookingData?.amendmentHistory && bookingData.amendmentHistory.length > 0 && (
                 <>
                   <p className="font-bold text-red-600">Amended</p>

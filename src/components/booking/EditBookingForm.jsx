@@ -169,6 +169,7 @@ const EditBookingForm = () => {
     newCheckOutDate: '',
     reason: ''
   });
+  const [showCompanyDetails, setShowCompanyDetails] = useState(false);
 
   const [formData, setFormData] = useState({
     grcNo: '',
@@ -259,6 +260,11 @@ const EditBookingForm = () => {
           category: { _id: categoryId }
         }));
         setSelectedRooms(existingRooms);
+      }
+      
+      // Set company details visibility
+      if (editBooking.companyName || editBooking.companyGSTIN) {
+        setShowCompanyDetails(true);
       }
       
       setFormData({
@@ -932,24 +938,41 @@ const EditBookingForm = () => {
                       onChange={handleChange}
                     />
                   </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="companyName">Company Name</Label>
-                    <Input
-                      id="companyName"
-                      name="companyName"
-                      value={formData.companyName}
-                      onChange={handleChange}
+                  <div className="space-y-2 flex items-center gap-2 sm:col-span-2 lg:col-span-3">
+                    <Checkbox
+                      id="showCompanyDetails"
+                      checked={showCompanyDetails}
+                      onChange={(e) => {
+                        setShowCompanyDetails(e.target.checked);
+                        if (!e.target.checked) {
+                          setFormData(prev => ({ ...prev, companyName: '', companyGSTIN: '' }));
+                        }
+                      }}
                     />
+                    <Label htmlFor="showCompanyDetails">Company Details</Label>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="companyGSTIN">Company GSTIN</Label>
-                    <Input
-                      id="companyGSTIN"
-                      name="companyGSTIN"
-                      value={formData.companyGSTIN}
-                      onChange={handleChange}
-                    />
-                  </div>
+                  {showCompanyDetails && (
+                    <>
+                      <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+                        <Label htmlFor="companyName">Company Name</Label>
+                        <Input
+                          id="companyName"
+                          name="companyName"
+                          value={formData.companyName}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="companyGSTIN">Company GSTIN</Label>
+                        <Input
+                          id="companyGSTIN"
+                          name="companyGSTIN"
+                          value={formData.companyGSTIN}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="idProofType">ID Proof Type</Label>
                     <Select
@@ -1489,12 +1512,19 @@ const EditBookingForm = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="planPackage">Package Plan</Label>
-                    <Input
+                    <Select
                       id="planPackage"
                       name="planPackage"
                       value={formData.planPackage}
                       onChange={handleChange}
-                    />
+                    >
+                      <option value="">Select Package Plan</option>
+                      <option value="EP">EP – Room Only</option>
+                      <option value="CP">CP – Room + Breakfast</option>
+                      <option value="MAP">MAP – Room + Breakfast + Lunch/Dinner</option>
+                      <option value="AP">AP – Room + All Meals</option>
+                      <option value="AI">AI – All Inclusive</option>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="timeIn">Check-in Time</Label>
