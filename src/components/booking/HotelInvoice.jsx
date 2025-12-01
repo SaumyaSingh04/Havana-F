@@ -22,30 +22,42 @@ export default function Invoice() {
 
   // Generate or retrieve existing invoice number
   const getOrGenerateInvoiceNumber = async (orderId, prefix) => {
+    console.log('getOrGenerateInvoiceNumber called with:', { orderId, prefix });
     const storageKey = `invoice_${prefix}_${orderId}`;
+    
+
+    
     const existing = localStorage.getItem(storageKey);
     
-    // For testing - uncomment to reset invoice numbers
-    // localStorage.removeItem(storageKey);
-    
+    // Return existing invoice number if already generated
     if (existing) {
+      console.log('Using existing invoice number:', existing);
       return existing;
     }
     
-    // Get next sequence number (resets monthly)
+    console.log('No existing invoice number found, calling backend API...');
+    try {
+      const response = await axios.get(`/api/invoices/next-invoice-number?bookingId=${orderId}`);
+      console.log('Backend response:', response.data);
+      if (response.data && response.data.invoiceNumber) {
+        const invoiceNumber = response.data.invoiceNumber;
+        localStorage.setItem(storageKey, invoiceNumber);
+        console.log('Generated new invoice number from backend:', invoiceNumber);
+        return invoiceNumber;
+      } else {
+        console.error('Invalid response from backend:', response.data);
+      }
+    } catch (error) {
+      console.error('Failed to get invoice number from backend:', error);
+      console.error('Error details:', error.response?.data);
+    }
+    
+    // Fallback to local generation if backend fails
+    console.log('Using fallback invoice number generation');
     const now = new Date();
-    const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
-    const counterKey = `invoice_counter_${prefix}_${year}_${month}`;
-    
-    let counter = parseInt(localStorage.getItem(counterKey) || '0');
-    counter += 1;
-    
-    const sequence = String(counter).padStart(4, '0');
-    const invoiceNumber = `${prefix}/${month}/${sequence}`;
-    
-    // Update counter and store invoice number
-    localStorage.setItem(counterKey, counter.toString());
+    const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+    const invoiceNumber = `HH/${month}/${sequence}`;
     localStorage.setItem(storageKey, invoiceNumber);
     
     return invoiceNumber;
@@ -96,7 +108,7 @@ export default function Invoice() {
           invoiceDetails: {
             billNo: await getOrGenerateInvoiceNumber(orderData._id || checkoutId, 'REST'),
             billDate: formatDate(),
-            grcNo: await getOrGenerateInvoiceNumber(orderData._id || checkoutId, 'GRC'),
+            grcNo: orderData.grcNo || 'N/A',
             roomNo: `Table ${orderData.tableNo || 'N/A'}`,
             roomType: 'Restaurant',
             pax: orderData.pax || 1,
@@ -174,9 +186,11 @@ export default function Invoice() {
         // Ensure invoice numbers are persistent and dates are formatted
         if (mappedData.invoiceDetails) {
           const billNo = await getOrGenerateInvoiceNumber(checkoutId, 'HH');
-          const grcNo = await getOrGenerateInvoiceNumber(checkoutId, 'GRC');
           mappedData.invoiceDetails.billNo = billNo;
-          mappedData.invoiceDetails.grcNo = grcNo;
+          // Keep the original GRC from booking data
+          if (!mappedData.invoiceDetails.grcNo && bookingData?.grcNo) {
+            mappedData.invoiceDetails.grcNo = bookingData.grcNo;
+          }
           mappedData.invoiceDetails.billDate = formatDate(mappedData.invoiceDetails.billDate);
           if (mappedData.invoiceDetails.checkInDate) {
             mappedData.invoiceDetails.checkInDate = formatDate(mappedData.invoiceDetails.checkInDate);
