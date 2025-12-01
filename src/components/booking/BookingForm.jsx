@@ -388,9 +388,12 @@ export const AppProvider = ({ children }) => {
   // --- Data Fetching Functions ---
   const fetchNewGRCNo = async () => {
     try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      
       const [grcResponse, invoiceResponse] = await Promise.all([
-        axios.get(`${BASE_URL}/api/bookings/next-grc`),
-        axios.get(`${BASE_URL}/api/invoices/next-invoice-number?format=monthly&preview=true`)
+        axios.get(`${BASE_URL}/api/bookings/next-grc`, { headers }),
+        axios.get(`${BASE_URL}/api/invoices/next-invoice-number?format=monthly&preview=true`, { headers })
       ]);
       
       if (grcResponse.data && grcResponse.data.grcNo) {
@@ -414,9 +417,12 @@ export const AppProvider = ({ children }) => {
 
   const fetchAllData = async () => {
     try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      
       const [catRes, roomRes] = await Promise.all([
-        axios.get(`${BASE_URL}/api/categories/all`),
-        axios.get(`${BASE_URL}/api/rooms/all`),
+        axios.get(`${BASE_URL}/api/categories/all`, { headers }),
+        axios.get(`${BASE_URL}/api/rooms/all`, { headers }),
       ]);
 
 
@@ -840,7 +846,10 @@ const App = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/api/bookings/customer/${searchGRC.trim()}`);
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      
+      const response = await axios.get(`${BASE_URL}/api/bookings/customer/${searchGRC.trim()}`, { headers });
       console.log("API Response:", response);
       console.log("Fetched customer data:", response.data); 
 
@@ -862,9 +871,12 @@ const App = () => {
         // Generate new GRC and preview Invoice for new booking
         let newGrcNo, newInvoiceNumber;
         try {
+          const token = localStorage.getItem('token');
+          const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+          
           const [grcResponse, invoiceResponse] = await Promise.all([
-            axios.get(`${BASE_URL}/api/bookings/next-grc`),
-            axios.get(`${BASE_URL}/api/invoices/next-invoice-number?format=monthly&preview=true`)
+            axios.get(`${BASE_URL}/api/bookings/next-grc`, { headers }),
+            axios.get(`${BASE_URL}/api/invoices/next-invoice-number?format=monthly&preview=true`, { headers })
           ]);
           
           if (grcResponse.data?.grcNo) {
@@ -1037,7 +1049,10 @@ const App = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/api/bookings/search?query=${encodeURIComponent(customerSearchQuery.trim())}`);
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      
+      const response = await axios.get(`${BASE_URL}/api/bookings/search?query=${encodeURIComponent(customerSearchQuery.trim())}`, { headers });
       
       if (response.data && response.data.success) {
         setCustomerSearchResults(response.data.customers || []);
@@ -1077,9 +1092,12 @@ const App = () => {
     setHasCheckedAvailability(true);
     try {
       // Get all rooms first to check their actual status
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      
       const [availabilityResponse, allRoomsResponse] = await Promise.all([
-        axios.get(`${BASE_URL}/api/rooms/available?checkInDate=${formData.checkInDate}&checkOutDate=${formData.checkOutDate}`),
-        axios.get(`${BASE_URL}/api/rooms/all`)
+        axios.get(`${BASE_URL}/api/rooms/available?checkInDate=${formData.checkInDate}&checkOutDate=${formData.checkOutDate}`, { headers }),
+        axios.get(`${BASE_URL}/api/rooms/all`, { headers })
       ]);
       
       const availableCategoriesData = availabilityResponse.data.availableRooms || [];
@@ -1344,19 +1362,21 @@ const App = () => {
     
     try {
       // Generate actual invoice number for the booking
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      };
+      
       const invoiceResponse = await axios.post(`${BASE_URL}/api/invoices/generate-for-booking`, {
         format: 'monthly'
-      });
+      }, { headers });
       
       if (invoiceResponse.data?.invoiceNumber) {
         cleanFormData.invoiceNumber = invoiceResponse.data.invoiceNumber;
       }
       
-      const response = await axios.post(`${BASE_URL}/api/bookings/book`, cleanFormData, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await axios.post(`${BASE_URL}/api/bookings/book`, cleanFormData, { headers });
 
       showToast.success("Booking submitted successfully!");
       alert("🎉 Booking submitted successfully! You will be redirected to the booking page.");

@@ -185,7 +185,8 @@ export default function Invoice() {
         
         // Ensure invoice numbers are persistent and dates are formatted
         if (mappedData.invoiceDetails) {
-          const billNo = await getOrGenerateInvoiceNumber(checkoutId, 'HH');
+          // Use existing invoice number from booking if available, otherwise generate new one
+          const billNo = bookingData?.invoiceNumber || await getOrGenerateInvoiceNumber(checkoutId, 'HH');
           mappedData.invoiceDetails.billNo = billNo;
           // Keep the original GRC from booking data
           if (!mappedData.invoiceDetails.grcNo && bookingData?.grcNo) {

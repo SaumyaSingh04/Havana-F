@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import { showToast } from '../../utils/toaster';
@@ -170,6 +170,10 @@ const EditBookingForm = () => {
     reason: ''
   });
   const [showCompanyDetails, setShowCompanyDetails] = useState(false);
+  const [roomServiceOrders, setRoomServiceOrders] = useState([]);
+  const [restaurantOrders, setRestaurantOrders] = useState([]);
+  const [navigationTimeoutId, setNavigationTimeoutId] = useState(null);
+  const isMountedRef = useRef(true);
 
   const [formData, setFormData] = useState({
     grcNo: '',
@@ -221,6 +225,7 @@ const EditBookingForm = () => {
     purposeOfVisit: '',
     discountPercent: 0,
     discountRoomSource: 0,
+    discountNotes: '',
     paymentMode: '',
     paymentStatus: 'Pending',
     bookingRefNo: '',
@@ -313,6 +318,7 @@ const EditBookingForm = () => {
         purposeOfVisit: editBooking.purposeOfVisit || '',
         discountPercent: editBooking.discountPercent || 0,
         discountRoomSource: editBooking.discountRoomSource || 0,
+        discountNotes: editBooking.discountNotes || '',
         paymentMode: editBooking.paymentMode || '',
         paymentStatus: editBooking.paymentStatus || 'Pending',
         bookingRefNo: editBooking.bookingRefNo || '',
@@ -499,7 +505,54 @@ const EditBookingForm = () => {
 
   useEffect(() => {
     fetchAllData();
+    if (editBooking) {
+      fetchRoomServiceOrders();
+    }
   }, []);
+
+  // Cleanup navigation timeout on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (navigationTimeoutId) {
+        clearTimeout(navigationTimeoutId);
+      }
+    };
+  }, [navigationTimeoutId]);
+
+  const fetchRoomServiceOrders = async () => {
+    if (!editBooking?.roomNumber) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const roomNumbers = editBooking.roomNumber.split(',').map(num => num.trim());
+      
+      // Fetch room service orders
+      const roomServiceResponse = await axios.get('/api/room-service/all', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const roomServiceData = roomServiceResponse.data.orders || [];
+      const filteredRoomService = roomServiceData.filter(order => 
+        roomNumbers.includes(order.roomNumber?.toString())
+      );
+      
+      // Fetch restaurant orders
+      const restaurantResponse = await axios.get('/api/restaurant-orders/all', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const restaurantData = restaurantResponse.data || [];
+      const filteredRestaurant = restaurantData.filter(order => 
+        roomNumbers.includes(order.tableNo?.toString())
+      );
+      
+      setRoomServiceOrders(filteredRoomService);
+      setRestaurantOrders(filteredRestaurant);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  };
 
   // Update selectedRooms with real room data when allRooms is loaded
   useEffect(() => {
@@ -772,9 +825,15 @@ const EditBookingForm = () => {
       console.log('Sending update data:', updateData);
       const response = await axios.put(`/api/bookings/update/${editBooking._id}`, updateData);
       console.log('Update response:', response.data);
-      showToast.success('Booking updated successfully!');
-      alert("🎉 Booking updated successfully! You will be redirected to the booking page.");
-      navigate('/booking');
+      if (isMountedRef.current) {
+        showToast.success('Booking updated successfully!');
+        const timeoutId = setTimeout(() => {
+          if (isMountedRef.current) {
+            navigate('/booking');
+          }
+        }, 1500);
+        setNavigationTimeoutId(timeoutId);
+      }
     } catch (error) {
       console.error('Error updating booking:', error);
       console.error('Error response:', error.response?.data);
@@ -1740,6 +1799,131 @@ const EditBookingForm = () => {
                 </div>
               </section>
 
+              {/* Room Service Orders Section */}
+              <section className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-full" style={{backgroundColor: 'hsl(45, 100%, 85%)'}}>
+                    <FaConciergeBell className="text-lg" style={{color: 'hsl(45, 43%, 58%)'}} />
+                  </div>
+                  <h2 className="text-xl font-semibold" style={{color: 'hsl(45, 100%, 20%)'}}>
+                    Room Service & Restaurant Orders
+                  </h2>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Room Service Orders */}
+                  <div className="bg-white rounded-xl shadow-md p-6">
+                    <h3 className="text-lg font-semibold mb-4" style={{color: 'hsl(45, 100%, 20%)'}}>
+                      Room Service Orders ({roomServiceOrders.length})
+                    </h3>
+                    {roomServiceOrders.length === 0 ? (
+                      <p className="text-gray-500 text-center py-4">No room service orders</p>
+                    ) : (
+                      <div className="space-y-3 max-h-60 overflow-y-auto">
+                        {roomServiceOrders.map((order) => (
+                          <div key={order._id} className="border rounded-lg p-3 hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <div className="font-medium">Order #{order.orderNumber}</div>
+                                <div className="text-sm text-gray-600">
+                                  {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}
+                                </div>
+                              </div>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                                order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                order.status === 'in-progress' ? 'bg-orange-100 text-orange-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {order.status}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600 mb-2">
+                              Room {order.roomNumber} • {order.items?.length || 0} items • ₹{order.totalAmount}
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => navigate(`/room-service/details/${order._id}`)}
+                                className="px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+                              >
+                                View
+                              </button>
+                              {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                                <button
+                                  onClick={() => navigate(`/room-service/edit/${order._id}`)}
+                                  className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                                >
+                                  Edit
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Restaurant Orders */}
+                  <div className="bg-white rounded-xl shadow-md p-6">
+                    <h3 className="text-lg font-semibold mb-4" style={{color: 'hsl(45, 100%, 20%)'}}>
+                      Restaurant Orders ({restaurantOrders.length})
+                    </h3>
+                    {restaurantOrders.length === 0 ? (
+                      <p className="text-gray-500 text-center py-4">No restaurant orders</p>
+                    ) : (
+                      <div className="space-y-3 max-h-60 overflow-y-auto">
+                        {restaurantOrders.map((order) => (
+                          <div key={order._id} className="border rounded-lg p-3 hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <div className="font-medium">Order #{order._id?.slice(-6) || 'N/A'}</div>
+                                <div className="text-sm text-gray-600">
+                                  {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}
+                                </div>
+                              </div>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                order.status === 'preparing' ? 'bg-orange-100 text-orange-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {order.status || 'pending'}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600 mb-2">
+                              Table {order.tableNo} • {order.items?.length || 0} items • ₹{order.amount}
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => navigate('/restaurant/all-orders')}
+                                className="px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+                              >
+                                View All
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => navigate('/room-service/create', {
+                      state: { 
+                        preSelectedBooking: editBooking,
+                        returnTo: '/booking'
+                      }
+                    })}
+                    className="px-6 py-3 rounded-lg font-medium text-white transition-colors"
+                    style={{backgroundColor: 'hsl(45, 43%, 58%)'}}
+                  >
+                    + Create New Room Service Order
+                  </button>
+                </div>
+              </section>
+
               {/* Payment Info Section */}
               <section className="space-y-4">
                 <div className="flex items-center space-x-3">
@@ -1815,7 +1999,18 @@ const EditBookingForm = () => {
                             
                             return sum + ((formData.extraBedCharge || 0) * Math.max(0, extraBedDays));
                           }, 0);
-                          const subtotal = roomRate + extraBedTotal;
+                          // Calculate room service and restaurant charges (exclude cancelled orders)
+                          const activeRoomServiceOrders = roomServiceOrders.filter(order => order.status !== 'cancelled');
+                          const activeRestaurantOrders = restaurantOrders.filter(order => order.status !== 'cancelled');
+                          
+                          const roomServiceTotal = activeRoomServiceOrders.reduce((sum, order) => {
+                            return sum + (Number(order.totalAmount) || 0);
+                          }, 0);
+                          const restaurantTotal = activeRestaurantOrders.reduce((sum, order) => {
+                            return sum + (Number(order.amount) || 0);
+                          }, 0);
+                          
+                          const subtotal = roomRate + extraBedTotal + roomServiceTotal + restaurantTotal;
                           const cgstAmount = subtotal * (Number(formData.cgstRate || 0) / 100);
                           const sgstAmount = subtotal * (Number(formData.sgstRate || 0) / 100);
                           const totalWithTax = subtotal + cgstAmount + sgstAmount;
@@ -1830,6 +2025,18 @@ const EditBookingForm = () => {
                                 <div className="flex justify-between">
                                   <span>Extra Beds ({selectedRooms.filter(r => r.extraBed).length} beds × variable days × ₹{formData.extraBedCharge || 0}):</span>
                                   <span>₹{extraBedTotal.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {roomServiceTotal > 0 && (
+                                <div className="flex justify-between">
+                                  <span>Room Service ({activeRoomServiceOrders.length} orders):</span>
+                                  <span>₹{roomServiceTotal.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {restaurantTotal > 0 && (
+                                <div className="flex justify-between">
+                                  <span>Restaurant ({activeRestaurantOrders.length} orders):</span>
+                                  <span>₹{restaurantTotal.toFixed(2)}</span>
                                 </div>
                               )}
                               <hr className="my-1" />
@@ -1897,6 +2104,25 @@ const EditBookingForm = () => {
                       onChange={handleChange}
                     />
                   </div>
+                  {formData.discountPercent > 0 && (
+                    <div className="space-y-2 col-span-full">
+                      <Label htmlFor="discountNotes">
+                        Discount Notes <span className="text-red-500">*</span>
+                      </Label>
+                      <textarea
+                        id="discountNotes"
+                        name="discountNotes"
+                        value={formData.discountNotes || ''}
+                        onChange={handleChange}
+                        className="flex w-full rounded-md bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50"
+                        style={{ border: '1px solid hsl(45, 100%, 85%)', color: 'hsl(45, 100%, 20%)' }}
+                        rows="3"
+                        placeholder="Please provide reason for discount (mandatory when discount is applied)"
+                        required
+                      />
+                      <p className="text-xs text-red-600">Note: Discount notes are mandatory when discount is applied</p>
+                    </div>
+                  )}
 
                   {/* Multiple Advance Payments Section */}
                   <div className="space-y-4 col-span-full">

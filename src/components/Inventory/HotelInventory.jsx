@@ -44,10 +44,27 @@ const HotelInventory = () => {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/inventory/items`);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Authentication token missing. Please login again.');
+        return;
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/inventory/items`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.status === 401) {
+        toast.error('Session expired. Please login again.');
+        return;
+      }
+      
       const data = await response.json();
       setItems(data.items || []);
     } catch (error) {
+      console.error('hotel inventory error', error);
       toast.error('Failed to fetch items');
     } finally {
       setLoading(false);
@@ -56,9 +73,19 @@ const HotelInventory = () => {
 
   const fetchLowStockItems = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/inventory/low-stock`);
-      const data = await response.json();
-      setLowStockItems(data.items || []);
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/inventory/low-stock`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setLowStockItems(data.items || []);
+      }
     } catch (error) {
       console.error('Failed to fetch low stock items');
     }

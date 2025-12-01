@@ -30,6 +30,11 @@ import RoomService from './components/room/RoomService';
 import RoomServiceBilling from './components/room/RoomServiceBilling';
 import BillLookup from './components/room/BillLookup';
 import SaleBill from './components/room/SaleBill';
+import RoomServiceToday from './components/room/RoomServiceToday';
+import RoomServiceHistory from './components/room/RoomServiceHistory';
+import CreateRoomService from './components/room/CreateRoomService';
+import EditRoomService from './components/room/EditRoomService';
+import RoomServiceDetails from './components/room/RoomServiceDetails';
 
 // Restaurant Components
 import MenuItems from './components/restaurant/MenuItems';
@@ -97,6 +102,11 @@ function App() {
             
             {/* Room Service Routes */}
             <Route path="room-service" element={<RoomService />} />
+            <Route path="room-service/create" element={<CreateRoomService />} />
+            <Route path="room-service/edit/:orderId" element={<EditRoomService />} />
+            <Route path="room-service/details/:id" element={<RoomServiceDetails />} />
+            <Route path="room-service/today" element={<RoomServiceToday />} />
+            <Route path="room-service/history" element={<RoomServiceHistory />} />
             <Route path="room-service-billing" element={<RoomServiceBilling />} />
             <Route path="bill-lookup" element={<BillLookup />} />
             <Route path="sale-bill" element={<SaleBill />} />

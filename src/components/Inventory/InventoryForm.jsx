@@ -85,10 +85,17 @@ const InventoryForm = ({ item, onClose }) => {
         ? `${import.meta.env.VITE_API_BASE_URL}/api/inventory/items/${item._id}`
         : `${import.meta.env.VITE_API_BASE_URL}/api/inventory/items`;
 
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Authentication token missing. Please login again.');
+        return;
+      }
+
       const response = await fetch(url, {
         method: item ? 'PUT' : 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           ...formData,

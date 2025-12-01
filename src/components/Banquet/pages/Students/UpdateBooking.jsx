@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
@@ -74,6 +74,8 @@ const UpdateBooking = () => {
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [menuLoading, setMenuLoading] = useState(false);
+  const [navigationTimeoutId, setNavigationTimeoutId] = useState(null);
+  const isMountedRef = useRef(true);
 
 
 
@@ -230,6 +232,16 @@ const UpdateBooking = () => {
   useEffect(() => {
     fetchBookingDetail();
   }, [id]);
+
+  // Cleanup navigation timeout on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (navigationTimeoutId) {
+        clearTimeout(navigationTimeoutId);
+      }
+    };
+  }, [navigationTimeoutId]);
 
   const fetchBookingDetail = async () => {
     try {
@@ -624,7 +636,7 @@ const UpdateBooking = () => {
     axios
       .put(`${import.meta.env.VITE_API_BASE_URL}/api/banquet-bookings/update/${id}`, payload)
       .then((res) => {
-        if (res.data) {
+        if (res.data && isMountedRef.current) {
           // Send WebSocket notification for real-time update
           sendMessage({
             type: 'BOOKING_UPDATED',
@@ -637,9 +649,12 @@ const UpdateBooking = () => {
 
           toast.success("Booking updated successfully!");
           setLoading(false);
-          setTimeout(() => {
-            navigate("/banquet/list-booking");
+          const timeoutId = setTimeout(() => {
+            if (isMountedRef.current) {
+              navigate("/banquet/list-booking");
+            }
           }, 600);
+          setNavigationTimeoutId(timeoutId);
         }
       })
       .catch((err) => {

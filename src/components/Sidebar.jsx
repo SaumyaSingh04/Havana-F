@@ -140,6 +140,21 @@ const Sidebar = () => {
       });
     }
 
+    // Room Service - Admin, GM, Staff
+    if (hasRole(['ADMIN', 'GM', 'STAFF'])) {
+      items.push({
+        icon: Bell,
+        label: "Room Service",
+        path: "/room-service",
+        isDropdown: true,
+        children: [
+          { label: "Create Order", path: "/room-service/create", icon: ShoppingCart },
+          { label: "Today's Orders", path: "/room-service/today", icon: ClipboardList },
+          { label: "All Orders", path: "/room-service/history", icon: FileText },
+        ],
+      });
+    }
+
     // Banquet - Admin, GM
     if (hasRole(['ADMIN', 'GM'])) {
       items.push({

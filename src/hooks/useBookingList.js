@@ -121,20 +121,12 @@ export const useBookingList = () => {
 
   const updateBookingStatus = async (bookingId, newStatus) => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/bookings/update/${bookingId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
-      
-      const responseData = await res.json();
-
-      if (!res.ok) throw new Error(responseData.message || "Update failed");
+      const token = getAuthToken();
+      await axios.put(`/api/bookings/update/${bookingId}`, {
+        status: newStatus,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
       setBookings((prev) =>
         prev.map((b) =>

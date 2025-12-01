@@ -173,15 +173,15 @@ const RoomService = () => {
         serviceType: 'Restaurant',
         roomNumber: roomData.room_number,
         guestName: roomData.booking?.name || 'Guest',
-        grcNo: roomData.booking?.grcNo,
+        bookingNo: roomData.booking?.bookingNo,
         bookingId: roomData.booking?._id,
         items: orderItems,
-        notes: `Room Service Order - ${roomData.booking?.name || 'Guest'}`,
-        staffName: 'Room Service',
-        phoneNumber: roomData.booking?.mobileNo || ''
+        notes: `Room Service Order - ${roomData.booking?.name || 'Guest'}`
       };
       
-      await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/room-service/create`, {
+      console.log('Sending room service order:', roomServiceOrderData);
+      
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/room-service/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,19 +190,26 @@ const RoomService = () => {
         body: JSON.stringify(roomServiceOrderData)
       });
       
+      const result = await response.json();
+      console.log('Room service response:', result);
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to create order');
+      }
+      
       alert('🎉 Order created successfully! Stock updated and room service notified.');
       setOrderItems([]);
       fetchItems(); // Refresh items to show updated stock
     } catch (error) {
-
-      alert('Error creating order');
+      console.error('Room service order error:', error);
+      alert(`Error creating order: ${error.message}`);
     }
   };
 
   const handleSaleBill = () => {
     navigate('/room-service-billing', { 
       state: { 
-        grcNo: roomData.booking?.grcNo,
+        bookingId: roomData.booking?._id,
         roomNumber: roomData.room_number,
         guestName: roomData.booking?.name 
       }
@@ -212,7 +219,7 @@ const RoomService = () => {
   const handleBillLookup = () => {
     navigate('/bill-lookup', { 
       state: { 
-        grcNo: roomData.booking?.grcNo,
+        bookingId: roomData.booking?._id,
         roomNumber: roomData.room_number,
         guestName: roomData.booking?.name 
       }
@@ -224,7 +231,7 @@ const RoomService = () => {
       state: {
         tableNumber: roomData.room_number,
         customerName: roomData.booking?.name || 'Guest',
-        grcNo: roomData.booking?.grcNo,
+        bookingId: roomData.booking?._id,
         isDineIn: true
       }
     });
@@ -288,10 +295,7 @@ const RoomService = () => {
               <span className="font-medium" style={{color: '#B8860B'}}>Room No.: </span>
               <span style={{color: '#8B4513'}}>{roomData.room_number}</span>
             </div>
-            <div>
-              <span className="font-medium" style={{color: '#B8860B'}}>GRC No.: </span>
-              <span style={{color: '#8B4513'}}>{booking?.grcNo || 'GRC-2053'}</span>
-            </div>
+
             <div>
               <span className="font-medium" style={{color: '#B8860B'}}>Name: </span>
               <span style={{color: '#8B4513'}}>{booking?.name || 'Anshu'}</span>

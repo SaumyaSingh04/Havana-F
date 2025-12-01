@@ -25,9 +25,9 @@ export const useOrderManagement = (location) => {
   const [gstRates, setGstRates] = useState(() => {
     const savedRates = localStorage.getItem('defaultGstRates');
     return savedRates ? JSON.parse(savedRates) : {
-      sgstRate: 2.5,
-      cgstRate: 2.5,
-      gstRate: 5
+      sgstRate: 0,
+      cgstRate: 0,
+      gstRate: 0
     };
   });
 
@@ -48,7 +48,9 @@ export const useOrderManagement = (location) => {
             _id: `dine-in-${location.state.tableNumber}`,
             tableNumber: location.state.tableNumber,
             status: 'occupied',
-            guestName: location.state.customerName || 'Guest'
+            guestName: location.state.customerName || 'Guest',
+            bookingNo: location.state.bookingNo,
+            bookingId: location.state.bookingId
           }];
         }
         return prev;
@@ -61,6 +63,8 @@ export const useOrderManagement = (location) => {
     const savedRates = localStorage.getItem('defaultGstRates');
     if (savedRates) {
       setGstRates(JSON.parse(savedRates));
+    } else {
+      setGstRates({ sgstRate: 0, cgstRate: 0, gstRate: 0 });
     }
   }, [location.state]);
 
@@ -128,7 +132,9 @@ export const useOrderManagement = (location) => {
                 _id: `${booking._id}_${roomNum}`,
                 tableNumber: roomNum,
                 status: 'occupied',
-                guestName: booking.name || 'Guest'
+                guestName: booking.name || 'Guest',
+                bookingNo: booking.bookingNo,
+                bookingId: booking._id
               });
             });
           }
@@ -227,10 +233,15 @@ export const useOrderManagement = (location) => {
       
       const gstAmounts = getGstAmounts();
       
+      // Get booking details for selected room
+      const selectedRoom = tables.find(room => room.tableNumber === orderData.tableNo);
+      
       const finalOrderData = {
         staffName: orderData.customerName || 'Restaurant Staff',
         customerName: orderData.customerName,
         tableNo: orderData.tableNo,
+        bookingNo: selectedRoom?.bookingNo,
+        bookingId: selectedRoom?.bookingId,
         items: orderItems,
         notes: cartItems.map(item => item.note).filter(note => note).join(', ') || '',
         subtotal: gstAmounts.subtotal,
