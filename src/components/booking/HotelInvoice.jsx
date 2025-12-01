@@ -20,6 +20,32 @@ export default function Invoice() {
   const [gstRates, setGstRates] = useState({ cgstRate: 2.5, sgstRate: 2.5 });
   const [showPaxDetails, setShowPaxDetails] = useState(false);
 
+  // Generate or retrieve existing invoice number
+  const getOrGenerateInvoiceNumber = async (orderId, prefix) => {
+    const storageKey = `invoice_${prefix}_${orderId}`;
+    const existing = localStorage.getItem(storageKey);
+    
+    if (existing) {
+      return existing;
+    }
+    
+    // Generate new invoice number
+    const timestamp = Date.now().toString().slice(-6);
+    const invoiceNumber = `${prefix}-${timestamp}`;
+    
+    // Store in localStorage
+    localStorage.setItem(storageKey, invoiceNumber);
+    
+    return invoiceNumber;
+  };
+
+  useEffect(() => {
+    const checkoutId = location.state?.checkoutId || bookingData?._id;
+    if (checkoutId) {
+      fetchInvoiceData(checkoutId);
+    }
+  }, [location.state]);
+
   // Fetch invoice data from checkout API or use restaurant order data
   const fetchInvoiceData = async (checkoutId) => {
     // Load current GST rates
@@ -47,9 +73,9 @@ export default function Invoice() {
             gstin: orderData.gstin || 'N/A'
           },
           invoiceDetails: {
-            billNo: `REST-${(orderData._id || checkoutId).slice(-6)}`,
+            billNo: await getOrGenerateInvoiceNumber(orderData._id || checkoutId, 'REST'),
             billDate: new Date().toLocaleDateString(),
-            grcNo: `GRC-${(orderData._id || checkoutId).slice(-6)}`,
+            grcNo: await getOrGenerateInvoiceNumber(orderData._id || checkoutId, 'GRC'),
             roomNo: `Table ${orderData.tableNo || 'N/A'}`,
             roomType: 'Restaurant',
             pax: orderData.pax || 1,
@@ -123,6 +149,14 @@ export default function Invoice() {
         
         // Use the invoice data directly from API response
         const mappedData = response.data.invoice;
+        
+        // Ensure invoice numbers are persistent
+        if (mappedData.invoiceDetails) {
+          const billNo = await getOrGenerateInvoiceNumber(checkoutId, 'HH');
+          const grcNo = await getOrGenerateInvoiceNumber(checkoutId, 'GRC');
+          mappedData.invoiceDetails.billNo = billNo;
+          mappedData.invoiceDetails.grcNo = grcNo;
+        }
         
         // Extra bed charges are now handled in the backend checkout controller
         
@@ -492,7 +526,7 @@ export default function Invoice() {
 
           <div className="client-details-right p-2">
             <div className="invoice-info-grid grid grid-cols-2 gap-y-1">
-              <p className="font-bold">Bill No. & Date</p>
+              <p className="font-bold">Invoice No. & Date</p>
               <p className="font-medium">: {invoiceData.invoiceDetails?.billNo} {invoiceData.invoiceDetails?.billDate}</p>
               <p className="font-bold">GRC No.</p>
               <p className="font-medium">: {invoiceData.invoiceDetails?.grcNo}</p>
