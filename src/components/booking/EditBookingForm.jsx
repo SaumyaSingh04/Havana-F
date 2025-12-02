@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { showToast } from '../../utils/toaster';
 import RoomServiceOrders from './RoomServiceOrders';
 import RestaurantOrders from './RestaurantOrders';
+import BackButton from '../common/BackButton';
 import {
   FaUser,
   FaPhone,
@@ -922,9 +923,12 @@ const EditBookingForm = () => {
     <div className="min-h-screen" style={{backgroundColor: 'hsl(45, 100%, 95%)'}}>
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold" style={{color: 'hsl(45, 100%, 20%)'}}>
-            Edit Booking - {formData.name}
-          </h1>
+          <div className="flex items-center gap-4">
+            <BackButton to="/booking" />
+            <h1 className="text-2xl font-bold" style={{color: 'hsl(45, 100%, 20%)'}}>
+              Edit Booking - {formData.name}
+            </h1>
+          </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-6">

@@ -410,7 +410,11 @@ const BookingPage = () => {
                     <td className="px-4 py-3 whitespace-nowrap">
                       <select
                         value={booking.status}
-                        onChange={(e) => updateBookingStatus(booking.id, e.target.value)}
+                        onChange={(e) => {
+                          if (confirm(`Are you sure you want to change booking status to "${e.target.value}"?`)) {
+                            updateBookingStatus(booking.id, e.target.value);
+                          }
+                        }}
                         disabled={booking.status === 'Checked Out'}
                         className={`px-2 py-1 rounded border text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                           booking.status === 'Checked Out' ? 'cursor-not-allowed opacity-60' : ''
@@ -456,9 +460,8 @@ const BookingPage = () => {
                       <select
                         value={booking.status === "Checked Out" ? "Paid" : booking.paymentStatus}
                         onChange={(e) => {
-                          updatePaymentStatus(booking.id, e.target.value);
-                          if (e.target.value === "Paid") {
-                            updateBookingStatus(booking.id, "Checked Out");
+                          if (confirm(`Are you sure you want to change payment status to "${e.target.value}"?`)) {
+                            updatePaymentStatus(booking.id, e.target.value);
                           }
                         }}
                         disabled={booking.status === 'Checked Out'}
@@ -660,7 +663,11 @@ const BookingPage = () => {
                   <span style={{ color: 'hsl(45, 100%, 40%)' }}>Payment:</span>
                   <select
                     value={booking.status === "Checked Out" ? "Paid" : booking.paymentStatus}
-                    onChange={(e) => updatePaymentStatus(booking.id, e.target.value)}
+                    onChange={(e) => {
+                      if (confirm(`Are you sure you want to change payment status to "${e.target.value}"?`)) {
+                        updatePaymentStatus(booking.id, e.target.value);
+                      }
+                    }}
                     disabled={booking.status === 'Checked Out'}
                     className={`ml-1 px-2 py-1 rounded border border-gray-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       booking.status === 'Checked Out' ? 'cursor-not-allowed opacity-60' : ''
