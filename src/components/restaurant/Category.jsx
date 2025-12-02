@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
 import { showToast } from "../../utils/toaster";
+import { ArrowLeft } from 'lucide-react';
 
-const Category = () => {
+const Category = ({ onBackToItems }) => {
   const { axios } = useAppContext();
   const [categories, setCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -65,7 +66,16 @@ const Category = () => {
   return (
     <div className="p-4 sm:p-6" style={{ backgroundColor: 'hsl(45, 100%, 95%)' }}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-xl sm:text-2xl font-semibold">Restaurant Categories</h2>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onBackToItems}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back to Items
+          </button>
+          <h2 className="text-xl sm:text-2xl font-semibold">Restaurant Categories</h2>
+        </div>
         <button
           onClick={() => setShowForm(true)}
           className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 w-full sm:w-auto"

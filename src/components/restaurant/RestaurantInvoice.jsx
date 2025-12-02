@@ -224,8 +224,8 @@ export default function RestaurantInvoice() {
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-4 space-y-4 lg:space-y-0">
             <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
               <div className="border border-black p-2">
-                <div className="w-12 h-12 sm:w-16 sm:h-16">
-                  <img src={ashokaLogo} alt="Havana Logo" className="w-full h-full object-cover" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10">
+                  <img src={ashokaLogo} alt="Havana Logo" className="w-full h-full object-contain" />
                 </div>
               </div>
               <div className="text-xs text-center sm:text-left">

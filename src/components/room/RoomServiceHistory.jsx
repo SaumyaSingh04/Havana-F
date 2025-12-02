@@ -6,18 +6,21 @@ const RoomServiceHistory = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
+  const [bookingFilter, setBookingFilter] = useState('all');
 
   useEffect(() => {
     fetchAllOrders();
+    fetchBookings();
   }, []);
 
   useEffect(() => {
     filterOrders();
-  }, [orders, searchQuery, statusFilter, dateFilter]);
+  }, [orders, searchQuery, statusFilter, dateFilter, bookingFilter]);
 
   const fetchAllOrders = async () => {
     try {
@@ -34,6 +37,22 @@ const RoomServiceHistory = () => {
       console.error('Error fetching orders:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBookings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/bookings/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setBookings(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
     }
   };
 
@@ -81,6 +100,13 @@ const RoomServiceHistory = () => {
       });
     }
 
+    if (bookingFilter !== 'all') {
+      filtered = filtered.filter(order => 
+        order.bookingId === bookingFilter || 
+        (order.bookingId && order.bookingId._id === bookingFilter)
+      );
+    }
+
     setFilteredOrders(filtered);
   };
 
@@ -117,7 +143,7 @@ const RoomServiceHistory = () => {
 
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{color: '#D4AF37'}} />
               <input
@@ -155,11 +181,28 @@ const RoomServiceHistory = () => {
               />
             </div>
 
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{color: '#D4AF37'}} />
+              <select
+                value={bookingFilter}
+                onChange={(e) => setBookingFilter(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              >
+                <option value="all">All Bookings</option>
+                {bookings.filter(booking => booking.status === 'Checked In').map(booking => (
+                  <option key={booking._id} value={booking._id}>
+                    {booking.grcNo} - {booking.name} (Room {booking.roomNumber})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <button
               onClick={() => {
                 setSearchQuery('');
                 setStatusFilter('all');
                 setDateFilter('');
+                setBookingFilter('all');
               }}
               className="px-6 py-3 rounded-lg font-medium text-white transition-colors"
               style={{backgroundColor: '#D4AF37'}}

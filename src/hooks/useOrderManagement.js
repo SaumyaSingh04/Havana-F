@@ -231,7 +231,7 @@ export const useOrderManagement = (location) => {
     return { subtotal, sgstAmount, cgstAmount, total: subtotal + sgstAmount + cgstAmount };
   };
 
-  const handlePlaceOrder = async (nonChargeable = false) => {
+  const handlePlaceOrder = async (nonChargeable = false, navigate = null) => {
     if (isPlacingOrder) return;
     
     if (cartItems.length === 0) {
@@ -317,10 +317,16 @@ export const useOrderManagement = (location) => {
       });
       
       showToast.success('🎉 Order placed successfully!');
-      alert('🎉 Order placed successfully! KOT has been generated and sent to kitchen.');
       setCartItems([]);
       setOrderData({ staffName: '', staffId: '', customerName: '', tableNo: '', items: [], amount: 0 });
       setIsCartOpen(false);
+      
+      // Navigate back to edit booking form if returnToEdit is provided
+      if (location.state?.returnToEdit && navigate) {
+        navigate(location.state.returnToEdit, {
+          state: location.state.returnState
+        });
+      }
       
     } catch (error) {
       console.error('Error placing order:', error);

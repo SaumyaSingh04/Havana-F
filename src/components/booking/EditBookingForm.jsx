@@ -549,7 +549,7 @@ const EditBookingForm = () => {
       const roomServiceData = roomServiceResponse.data.orders || [];
       const restaurantData = restaurantResponse.data || [];
       
-      // Filter room service orders to exclude cancelled ones
+      // Filter out cancelled room service orders for edit booking form
       const filteredRoomService = roomServiceData.filter(order => 
         order.status !== 'cancelled' && order.status !== 'canceled'
       );
@@ -1904,7 +1904,9 @@ const EditBookingForm = () => {
                       }
                       
                       if (editItems.length === 0) {
-                        await axios.delete(`/api/room-service/${orderId}`);
+                        await axios.patch(`/api/room-service/${orderId}/status`, {
+                          status: 'cancelled'
+                        });
                         showToast.success('Order cancelled');
                       } else {
                         const subtotal = editItems.reduce((sum, item) => {
@@ -2086,8 +2088,7 @@ const EditBookingForm = () => {
                       setIsNavigating(true);
                       navigate('/room-service/create', {
                         state: { 
-                          preSelectedBooking: editBooking,
-                          returnTo: '/booking'
+                          preSelectedBooking: editBooking
                         }
                       });
                     }}
@@ -2104,7 +2105,8 @@ const EditBookingForm = () => {
                         state: { 
                           preSelectedBooking: editBooking,
                           isDineIn: true,
-                          returnTo: '/booking'
+                          returnToEdit: `/edit-booking/${editBooking._id}`,
+                          returnState: { editBooking }
                         }
                       });
                     }}

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useOrderManagement } from '../../hooks/useOrderManagement';
 import { useAuth } from '../../context/AuthContext';
 
 const Order = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { hasRole } = useAuth();
   const [isConnected] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -382,7 +383,7 @@ const Order = () => {
                   </button>
                   <button
                     className="w-full py-3 px-4 rounded-md text-white bg-gradient-to-r from-[#c3ad6b] to-[#b39b5a] font-semibold hover:from-[#b39b5a] hover:to-[#c3ad6b] transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={() => handlePlaceOrder(nonChargeable)}
+                    onClick={() => handlePlaceOrder(nonChargeable, navigate)}
                     disabled={isPlacingOrder}
                   >
                     {isPlacingOrder ? 'Placing Order...' : 'Place Order'}

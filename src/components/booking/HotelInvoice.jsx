@@ -5,6 +5,7 @@ import { RiPhoneFill, RiMailFill } from 'react-icons/ri';
 import { FaWhatsapp, FaFilePdf } from 'react-icons/fa';
 import { useAppContext } from '../../context/AppContext';
 import { useReactToPrint } from 'react-to-print';
+import BackButton from '../common/BackButton';
 
 export default function Invoice() {
   const { axios } = useAppContext();
@@ -535,6 +536,7 @@ export default function Invoice() {
             TAX INVOICE
           </div>
           <div className="flex gap-2 no-print">
+            <BackButton to="/booking" />
             <button
               onClick={() => setShowPaxDetails(!showPaxDetails)}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"

@@ -182,9 +182,17 @@ const CreateRoomService = () => {
       });
 
       if (response.ok) {
-        alert('Room service order created successfully!');
         setFormData({ roomNumber: '', guestName: '', bookingNo: '', bookingId: '', serviceType: '' });
         setOrderItems([]);
+        
+        // Navigate back to edit booking form if came from there
+        if (preSelectedBooking) {
+          navigate(`/edit-booking/${preSelectedBooking._id}`, {
+            state: { editBooking: preSelectedBooking }
+          });
+        } else {
+          alert('Room service order created successfully!');
+        }
       } else {
         const error = await response.json();
         alert(`Error: ${error.message}`);
@@ -202,12 +210,20 @@ const CreateRoomService = () => {
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => {
+              if (preSelectedBooking) {
+                navigate(`/edit-booking/${preSelectedBooking._id}`, {
+                  state: { editBooking: preSelectedBooking }
+                });
+              } else {
+                navigate('/dashboard');
+              }
+            }}
             className="flex items-center hover:opacity-80 transition-opacity text-lg"
             style={{color: '#B8860B'}}
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Dashboard
+            {preSelectedBooking ? 'Back to Edit Booking' : 'Back to Dashboard'}
           </button>
           <h1 className="text-3xl font-bold" style={{color: '#B8860B'}}>Create Room Service Order</h1>
           <div></div>
@@ -348,7 +364,9 @@ const CreateRoomService = () => {
                         customerName: formData.guestName,
                         bookingId: formData.bookingId,
                         bookingNo: formData.bookingNo,
-                        isDineIn: true
+                        isDineIn: true,
+                        returnToEdit: preSelectedBooking ? `/edit-booking/${preSelectedBooking._id}` : null,
+                        returnState: preSelectedBooking ? { editBooking: preSelectedBooking } : null
                       }
                     })}
                     className="px-8 py-4 rounded-lg font-medium text-white transition-colors text-lg"

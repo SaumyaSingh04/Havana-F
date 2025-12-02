@@ -92,7 +92,7 @@ const MenuItems = () => {
   };
 
   if (activeTab === 'categories') {
-    return <Category />;
+    return <Category onBackToItems={() => setActiveTab('items')} />;
   }
 
   return (

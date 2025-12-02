@@ -185,7 +185,11 @@ export const useKOTManagement = () => {
       
       setKots(activeOrders);
       setKotHistory(historyOrders);
-      setFilteredKots(activeTab === 'history' ? historyOrders : activeOrders);
+      
+      // Only update filteredKots if no search is active
+      if (!searchQuery.trim()) {
+        setFilteredKots(activeTab === 'history' ? historyOrders : activeOrders);
+      }
     } catch (error) {
       console.error('Error fetching consolidated orders:', error);
     }
