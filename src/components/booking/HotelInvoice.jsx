@@ -25,8 +25,6 @@ export default function Invoice() {
     console.log('getOrGenerateInvoiceNumber called with:', { orderId, prefix });
     const storageKey = `invoice_${prefix}_${orderId}`;
     
-
-    
     const existing = localStorage.getItem(storageKey);
     
     // Return existing invoice number if already generated
@@ -37,7 +35,8 @@ export default function Invoice() {
     
     console.log('No existing invoice number found, calling backend API...');
     try {
-      const response = await axios.get(`/api/invoices/next-invoice-number?bookingId=${orderId}&preview=true`);
+      // First check if this booking already has an invoice
+      const response = await axios.get(`/api/invoices/next-invoice-number?bookingId=${orderId}&preview=false`);
       console.log('Backend response:', response.data);
       if (response.data && response.data.invoiceNumber) {
         const invoiceNumber = response.data.invoiceNumber;
