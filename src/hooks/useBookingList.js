@@ -96,9 +96,16 @@ export const useBookingList = () => {
       if (!booking) throw new Error("Booking not found");
 
       const token = getAuthToken();
-      await axios.put(`/api/bookings/update/${bookingId}`, {
+      const updateData = {
         paymentStatus: newPaymentStatus,
-      }, {
+      };
+      
+      // If payment status is set to "Paid", set balance due to 0
+      if (newPaymentStatus === "Paid") {
+        updateData.balanceAmount = 0;
+      }
+      
+      await axios.put(`/api/bookings/update/${bookingId}`, updateData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

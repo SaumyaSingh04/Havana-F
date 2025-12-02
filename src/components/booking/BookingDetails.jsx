@@ -482,6 +482,11 @@ const BookingDetails = () => {
                     <div className="flex justify-between text-lg font-semibold mt-2">
                       <span>Balance Due:</span>
                       <span className="text-orange-600">₹{(() => {
+                        // If payment status is "Paid", balance due is 0
+                        if (booking.paymentStatus === 'Paid') {
+                          return '0.00';
+                        }
+                        
                         const baseRoomRate = (() => {
                           const totalRate = booking.taxableAmount || 0;
                           const extraBedCost = booking.extraBed && booking.extraBedRooms && booking.extraBedRooms.length > 0 
@@ -649,6 +654,11 @@ const BookingDetails = () => {
                   <div className="flex justify-between text-xl font-bold text-orange-600">
                     <span>Balance Due:</span>
                     <span>₹{(() => {
+                      // If payment status is "Paid", balance due is 0
+                      if (booking.paymentStatus === 'Paid') {
+                        return '0.00';
+                      }
+                      
                       // Calculate base room rate (without extra bed)
                       const baseRoomRate = (() => {
                         const totalRate = booking.taxableAmount || 0;
