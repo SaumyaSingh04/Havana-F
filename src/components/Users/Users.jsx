@@ -81,13 +81,57 @@ const Users = () => {
   };
 
   const handleStatusToggle = async (userId, currentStatus) => {
+    // Update UI immediately
+    const newStatus = currentStatus === false ? true : false;
+    
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user._id === userId 
+          ? { ...user, isActive: newStatus }
+          : user
+      )
+    );
+    setFilteredUsers(prevUsers => 
+      prevUsers.map(user => 
+        user._id === userId 
+          ? { ...user, isActive: newStatus }
+          : user
+      )
+    );
+    
     try {
       await axios.patch(`/api/users/toggle-status/${userId}`);
       showToast.success('User status updated successfully!');
-      fetchUsers(currentPage);
+      
+      // If user was deactivated, broadcast to force logout
+      if (newStatus === false) {
+        // For cross-tab logout
+        localStorage.setItem('forceLogout', JSON.stringify({ userId, timestamp: Date.now() }));
+        localStorage.removeItem('forceLogout');
+        
+        // For same-tab logout
+        window.dispatchEvent(new CustomEvent('forceLogout', { detail: { userId } }));
+      }
+      
     } catch (error) {
       console.error('Error updating user status:', error);
       showToast.error('Failed to update user status');
+      
+      // Revert the change on error
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user._id === userId 
+            ? { ...user, isActive: currentStatus }
+            : user
+        )
+      );
+      setFilteredUsers(prevUsers => 
+        prevUsers.map(user => 
+          user._id === userId 
+            ? { ...user, isActive: currentStatus }
+            : user
+        )
+      );
     }
   };
 
@@ -202,9 +246,18 @@ const Users = () => {
                         }
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs ${getStatusColor(user.isActive !== false)}`}>
-                          {user.isActive !== false ? 'Active' : 'Inactive'}
-                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={user.isActive !== false}
+                            onChange={() => handleStatusToggle(user._id, user.isActive)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                          <span className={`ml-3 text-sm font-medium ${user.isActive !== false ? 'text-green-600' : 'text-gray-500'}`}>
+                            {user.isActive !== false ? 'Active' : 'Inactive'}
+                          </span>
+                        </label>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1">
@@ -441,6 +494,32 @@ const Users = () => {
                   placeholder="Leave blank to keep current password"
                 />
                 <p className="text-xs text-gray-500 mt-1">Leave empty if you don't want to change the password</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Status</label>
+                <div className="flex items-center space-x-3">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isActive"
+                      checked={editUser.isActive !== false}
+                      onChange={() => setEditUser({...editUser, isActive: true})}
+                      className="mr-2"
+                    />
+                    <span className="text-green-600 font-medium">Active</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isActive"
+                      checked={editUser.isActive === false}
+                      onChange={() => setEditUser({...editUser, isActive: false})}
+                      className="mr-2"
+                    />
+                    <span className="text-red-600 font-medium">Inactive</span>
+                  </label>
+                </div>
               </div>
               
               <div className="border-t pt-4">
