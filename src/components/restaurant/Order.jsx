@@ -16,15 +16,18 @@ const Order = () => {
     categories,
     staff,
     tables,
+    allBookings,
     cartItems,
     isCartOpen,
     isPlacingOrder,
     searchQuery,
+    bookingFilter,
     orderData,
     filteredMenu,
     gstRates,
     setIsCartOpen,
     setSearchQuery,
+    setBookingFilter,
     setOrderData,
     setCartItems,
     setGstRates,
@@ -86,6 +89,11 @@ const Order = () => {
                 </option>
               ))}
             </select>
+            {bookingFilter !== 'all' && tables.length === 0 && (
+              <p className="text-sm text-orange-600 mt-1">
+                No rooms available for selected booking
+              </p>
+            )}
           </div>
           <div className="flex flex-col space-y-3">
             <label htmlFor="customerName" className="font-bold text-[#b39b5a]">Customer Name</label>
@@ -140,7 +148,7 @@ const Order = () => {
       {/* Search and Filter section */}
       <div className="w-full bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl p-6 sm:p-8 mb-8 border border-[#c3ad6b]/30">
         <label htmlFor="search-menu" className="block font-bold mb-4 text-lg text-[#b39b5a]">Search & Filter Menu</label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
             <input
               id="search-menu"
@@ -164,6 +172,20 @@ const Order = () => {
               {categories.map(category => (
                 <option key={category._id} value={category._id}>
                   {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <select
+              value={bookingFilter}
+              onChange={(e) => setBookingFilter(e.target.value)}
+              className="w-full rounded-xl px-4 py-4 border-2 border-[#c3ad6b]/30 focus:border-[#c3ad6b] focus:ring-2 focus:ring-[#c3ad6b]/20 text-gray-700 bg-white/80 backdrop-blur-sm transition-all duration-200 text-base"
+            >
+              <option value="all">All Bookings</option>
+              {allBookings.filter(booking => booking.status === 'Checked In').map(booking => (
+                <option key={booking._id} value={booking._id}>
+                  {booking.grcNo} - {booking.name} (Room {booking.roomNumber})
                 </option>
               ))}
             </select>

@@ -9,10 +9,12 @@ export const useOrderManagement = (location) => {
   const [categories, setCategories] = useState([]);
   const [staff, setStaff] = useState([]);
   const [tables, setTables] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [bookingFilter, setBookingFilter] = useState('all');
   const [orderData, setOrderData] = useState({
     staffName: '',
     staffId: '',
@@ -171,9 +173,11 @@ export const useOrderManagement = (location) => {
         });
         
         setTables(occupiedRooms);
+        setAllBookings(bookingData);
       } catch (error) {
         console.error('Error fetching bookings:', error);
         setTables([]);
+        setAllBookings([]);
       }
       
     } catch (error) {
@@ -341,16 +345,23 @@ export const useOrderManagement = (location) => {
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Filter tables based on booking filter
+  const filteredTables = bookingFilter === 'all' 
+    ? tables 
+    : tables.filter(table => table.bookingId === bookingFilter);
+
   return {
     // State
     menuItems,
     categories,
     staff,
-    tables,
+    tables: filteredTables,
+    allBookings,
     cartItems,
     isCartOpen,
     isPlacingOrder,
     searchQuery,
+    bookingFilter,
     orderData,
     filteredMenu,
     gstRates,
@@ -358,6 +369,7 @@ export const useOrderManagement = (location) => {
     // Setters
     setIsCartOpen,
     setSearchQuery,
+    setBookingFilter,
     setOrderData,
     setCartItems,
     setGstRates,
