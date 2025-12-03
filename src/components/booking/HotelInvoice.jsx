@@ -341,7 +341,8 @@ export default function Invoice() {
     
     // Only room charges (including extra beds) are taxable
     const roomCharges = invoiceData.items?.filter(item => 
-      item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed'))
+      item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed')) &&
+      !item.particulars.includes('Service') && !item.particulars.includes('Restaurant') && !item.particulars.includes('DINING')
     ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0) || 0;
     
     // Apply discount only to room charges
@@ -349,8 +350,12 @@ export default function Invoice() {
     const discountAmount = roomCharges * (discountPercent / 100);
     const discountedRoomCharges = roomCharges - discountAmount;
     
-    // Total taxable amount = only discounted room charges
-    const totalTaxableAmount = discountedRoomCharges;
+    // Add service charges to taxable amount
+    const serviceCharges = invoiceData.items?.filter(item => 
+      item.particulars && (item.particulars.includes('Service') || item.particulars.includes('Restaurant') || item.particulars.includes('ROOM SERVICE') || item.particulars.includes('DINING'))
+    ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0) || 0;
+    
+    const totalTaxableAmount = discountedRoomCharges + serviceCharges;
     
     const sgstRate = bookingData?.sgstRate !== undefined ? bookingData.sgstRate : (gstRates.sgstRate / 100);
     const cgstRate = bookingData?.cgstRate !== undefined ? bookingData.cgstRate : (gstRates.cgstRate / 100);
@@ -371,7 +376,8 @@ export default function Invoice() {
     
     // Only room charges (including extra beds) are taxable
     const roomCharges = invoiceData.items?.filter(item => 
-      item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed'))
+      item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed')) &&
+      !item.particulars.includes('Service') && !item.particulars.includes('Restaurant') && !item.particulars.includes('DINING')
     ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0) || 0;
     
     // Apply discount only to room charges
@@ -379,8 +385,12 @@ export default function Invoice() {
     const discountAmount = roomCharges * (discountPercent / 100);
     const discountedRoomCharges = roomCharges - discountAmount;
     
-    // Total taxable amount = only discounted room charges
-    const totalTaxableAmount = discountedRoomCharges;
+    // Add service charges to taxable amount
+    const serviceCharges = invoiceData.items?.filter(item => 
+      item.particulars && (item.particulars.includes('Service') || item.particulars.includes('Restaurant') || item.particulars.includes('ROOM SERVICE') || item.particulars.includes('DINING'))
+    ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0) || 0;
+    
+    const totalTaxableAmount = discountedRoomCharges + serviceCharges;
     
     // Calculate taxes on the total taxable amount
     const sgstRate = bookingData?.sgstRate !== undefined ? bookingData.sgstRate : (gstRates.sgstRate / 100);
@@ -762,7 +772,8 @@ export default function Invoice() {
                       <td className="p-0.5 border-l border-black text-right text-xs">₹{(() => {
                         if (!invoiceData?.items) return '0.00';
                         const roomCharges = invoiceData.items.filter(item => 
-                          item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed'))
+                          item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed')) &&
+                          !item.particulars.includes('Service') && !item.particulars.includes('Restaurant') && !item.particulars.includes('DINING')
                         ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0);
                         return roomCharges.toFixed(2);
                       })()}</td>
@@ -788,7 +799,8 @@ export default function Invoice() {
                       <td className="p-0.5 border-l border-black text-right text-xs">₹{(() => {
                         if (!invoiceData?.items) return '0.00';
                         const roomCharges = invoiceData.items.filter(item => 
-                          item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed'))
+                          item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed')) &&
+                          !item.particulars.includes('Service') && !item.particulars.includes('Restaurant') && !item.particulars.includes('DINING')
                         ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0);
                         const discountPercent = bookingData?.discountPercent || 0;
                         const discountAmount = roomCharges * (discountPercent / 100);
@@ -801,12 +813,16 @@ export default function Invoice() {
                       <td className="p-0.5 border-l border-black text-right text-xs">₹{(() => {
                         if (!invoiceData?.items) return '0.00';
                         const roomCharges = invoiceData.items.filter(item => 
-                          item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed'))
+                          item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed')) &&
+                          !item.particulars.includes('Service') && !item.particulars.includes('Restaurant') && !item.particulars.includes('DINING')
+                        ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0);
+                        const serviceCharges = invoiceData.items.filter(item => 
+                          item.particulars && (item.particulars.includes('Service') || item.particulars.includes('Restaurant') || item.particulars.includes('ROOM SERVICE') || item.particulars.includes('DINING'))
                         ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0);
                         const discountPercent = bookingData?.discountPercent || 0;
                         const discountAmount = roomCharges * (discountPercent / 100);
                         const discountedRoomCharges = roomCharges - discountAmount;
-                        return discountedRoomCharges.toFixed(2);
+                        return (discountedRoomCharges + serviceCharges).toFixed(2);
                       })()}</td>
                     </tr>
                     <tr>
@@ -814,13 +830,18 @@ export default function Invoice() {
                       <td className="p-0.5 border-l border-black text-right text-xs">₹{(() => {
                         if (!invoiceData?.items) return '0.00';
                         const roomCharges = invoiceData.items.filter(item => 
-                          item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed'))
+                          item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed')) &&
+                          !item.particulars.includes('Service') && !item.particulars.includes('Restaurant') && !item.particulars.includes('DINING')
+                        ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0);
+                        const serviceCharges = invoiceData.items.filter(item => 
+                          item.particulars && (item.particulars.includes('Service') || item.particulars.includes('Restaurant') || item.particulars.includes('ROOM SERVICE') || item.particulars.includes('DINING'))
                         ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0);
                         const discountPercent = bookingData?.discountPercent || 0;
                         const discountAmount = roomCharges * (discountPercent / 100);
                         const discountedRoomCharges = roomCharges - discountAmount;
+                        const totalTaxableAmount = discountedRoomCharges + serviceCharges;
                         const sgstRate = bookingData?.sgstRate !== undefined ? bookingData.sgstRate : (gstRates.sgstRate / 100);
-                        return (discountedRoomCharges * sgstRate).toFixed(2);
+                        return (totalTaxableAmount * sgstRate).toFixed(2);
                       })()}</td>
                     </tr>
                     <tr>
@@ -828,13 +849,18 @@ export default function Invoice() {
                       <td className="p-0.5 border-l border-black text-right text-xs">₹{(() => {
                         if (!invoiceData?.items) return '0.00';
                         const roomCharges = invoiceData.items.filter(item => 
-                          item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed'))
+                          item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed')) &&
+                          !item.particulars.includes('Service') && !item.particulars.includes('Restaurant') && !item.particulars.includes('DINING')
+                        ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0);
+                        const serviceCharges = invoiceData.items.filter(item => 
+                          item.particulars && (item.particulars.includes('Service') || item.particulars.includes('Restaurant') || item.particulars.includes('ROOM SERVICE') || item.particulars.includes('DINING'))
                         ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0);
                         const discountPercent = bookingData?.discountPercent || 0;
                         const discountAmount = roomCharges * (discountPercent / 100);
                         const discountedRoomCharges = roomCharges - discountAmount;
+                        const totalTaxableAmount = discountedRoomCharges + serviceCharges;
                         const cgstRate = bookingData?.cgstRate !== undefined ? bookingData.cgstRate : (gstRates.cgstRate / 100);
-                        return (discountedRoomCharges * cgstRate).toFixed(2);
+                        return (totalTaxableAmount * cgstRate).toFixed(2);
                       })()}</td>
                     </tr>
 
