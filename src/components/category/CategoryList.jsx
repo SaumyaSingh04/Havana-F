@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 import toast from 'react-hot-toast';
 import CategoryForm from "./CategoryForm";
 import Pagination from "../common/Pagination";
@@ -9,6 +10,7 @@ import DashboardLoader from '../DashboardLoader';
 
 const CategoryList = () => {
   const { axios } = useAppContext();
+  const { hasRole } = useAuth();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -212,12 +214,14 @@ const CategoryList = () => {
                       >
                         <Edit size={18} />
                       </button>
-                      <button
-                        onClick={() => handleDeleteCategory(category._id)}
-                        className="p-1 rounded-full text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      {hasRole('ADMIN') && (
+                        <button
+                          onClick={() => handleDeleteCategory(category._id)}
+                          className="p-1 rounded-full text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

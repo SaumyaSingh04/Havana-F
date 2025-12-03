@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Edit, XCircle, CheckCircle, Search, X, FileText, Trash2, Calendar, Eye } from "lucide-react";
 import { useBookingList } from "../../hooks/useBookingList";
 import { useAppContext } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 import Pagination from "../common/Pagination";
 import DashboardLoader from '../DashboardLoader';
 import HotelCheckout from './HotelCheckout';
@@ -12,6 +13,7 @@ import HotelCheckout from './HotelCheckout';
 const BookingPage = () => {
   const navigate = useNavigate();
   const { axios } = useAppContext();
+  const { hasRole } = useAuth();
   const {
     bookings,
     loading,
@@ -555,13 +557,15 @@ const BookingPage = () => {
                             Checked Out
                           </button>
                         )}
-                        <button
-                          onClick={() => deleteBooking(booking.id)}
-                          title="Delete Booking"
-                          className="p-1.5 rounded-full text-red-600 transition duration-300"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {hasRole('ADMIN') && (
+                          <button
+                            onClick={() => deleteBooking(booking.id)}
+                            title="Delete Booking"
+                            className="p-1.5 rounded-full text-red-600 transition duration-300"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -780,14 +784,16 @@ const BookingPage = () => {
                     Checked Out
                   </button>
                 )}
-                <button
-                  onClick={() => deleteBooking(booking.id)}
-                  className="p-2 rounded-full transition duration-300"
-                  style={{ color: 'hsl(0, 60%, 50%)' }}
-                  title="Delete"
-                >
-                  <Trash2 size={18} />
-                </button>
+                {hasRole('ADMIN') && (
+                  <button
+                    onClick={() => deleteBooking(booking.id)}
+                    className="p-2 rounded-full transition duration-300"
+                    style={{ color: 'hsl(0, 60%, 50%)' }}
+                    title="Delete"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
               </div>
             </div>
           ))}

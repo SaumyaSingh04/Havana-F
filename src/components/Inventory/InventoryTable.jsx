@@ -5,8 +5,10 @@ import {
   AlertTriangle, CheckCircle, ChevronUp, ChevronDown, Package 
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 const InventoryTable = ({ items, loading, onEdit, onStockIn, onStockOut, onRefresh }) => {
+  const { hasRole } = useAuth();
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
 
@@ -204,13 +206,15 @@ const InventoryTable = ({ items, loading, onEdit, onStockIn, onStockOut, onRefre
                       >
                         <Edit size={16} />
                       </button>
-                      <button
-                        onClick={() => handleDelete(item._id)}
-                        className="text-red-600 hover:text-red-900 p-1 rounded"
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {hasRole('ADMIN') && (
+                        <button
+                          onClick={() => handleDelete(item._id)}
+                          className="text-red-600 hover:text-red-900 p-1 rounded"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

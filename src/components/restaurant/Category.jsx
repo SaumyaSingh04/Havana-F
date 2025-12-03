@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 import { showToast } from "../../utils/toaster";
 import { ArrowLeft } from 'lucide-react';
 
 const Category = ({ onBackToItems }) => {
   const { axios } = useAppContext();
+  const { hasRole } = useAuth();
   const [categories, setCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -150,12 +152,14 @@ const Category = ({ onBackToItems }) => {
               >
                 Edit
               </button>
-              <button
-                onClick={() => handleDelete(category._id)}
-                className="bg-red-500 text-white px-3 py-1 rounded text-sm"
-              >
-                Delete
-              </button>
+              {hasRole('ADMIN') && (
+                <button
+                  onClick={() => handleDelete(category._id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded text-sm"
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </div>
         ))}

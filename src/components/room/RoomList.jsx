@@ -11,6 +11,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 import { showToast } from "../../utils/toaster";
 import RoomForm from "./RoomForm";
 import Pagination from "../common/Pagination";
@@ -18,6 +19,7 @@ import DashboardLoader from '../DashboardLoader';
 
 const RoomList = () => {
   const { axios } = useAppContext();
+  const { hasRole } = useAuth();
   const [rooms, setRooms] = useState([]);
   const [categories, setCategories] = useState({});
   const [loading, setLoading] = useState(true);
@@ -433,12 +435,14 @@ const RoomList = () => {
                       >
                         <Edit className="w-4 h-4 text-blue-600" />
                       </button>
-                      <button
-                        onClick={() => handleDeleteRoom(room._id)}
-                        className="bg-white/80 text-red-600 p-1.5 rounded-full hover:bg-white"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {hasRole('ADMIN') && (
+                        <button
+                          onClick={() => handleDeleteRoom(room._id)}
+                          className="bg-white/80 text-red-600 p-1.5 rounded-full hover:bg-white"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                     <div className="absolute top-2 left-2">
                       <span

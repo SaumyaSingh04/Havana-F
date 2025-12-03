@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Search, Calendar, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const RoomServiceHistory = () => {
   const navigate = useNavigate();
+  const { hasRole } = useAuth();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -272,12 +274,14 @@ const RoomServiceHistory = () => {
                             >
                               Edit
                             </button>
-                            <button
-                              onClick={() => updateOrderStatus(order._id, 'cancelled')}
-                              className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
-                            >
-                              Delete
-                            </button>
+                            {hasRole('ADMIN') && (
+                              <button
+                                onClick={() => updateOrderStatus(order._id, 'cancelled')}
+                                className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                              >
+                                Delete
+                              </button>
+                            )}
                           </div>
                         </div>
                       </td>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { showToast } from '../../utils/toaster';
 import Pagination from '../common/Pagination';
 import RegisterForm from '../auth/RegisterForm';
@@ -7,6 +8,7 @@ import DashboardLoader from '../DashboardLoader';
 
 const Users = () => {
   const { axios } = useAppContext();
+  const { hasRole } = useAuth();
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -272,13 +274,14 @@ const Users = () => {
                           >
                             Edit
                           </button>
-
-                          <button
-                            onClick={() => handleDelete(user._id)}
-                            className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
-                          >
-                            Delete
-                          </button>
+                          {hasRole('ADMIN') && (
+                            <button
+                              onClick={() => handleDelete(user._id)}
+                              className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

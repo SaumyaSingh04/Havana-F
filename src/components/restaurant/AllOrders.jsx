@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import Pagination from '../common/Pagination';
 
 const AllOrders = () => {
   const { axios } = useAppContext();
+  const { hasRole } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -310,12 +312,14 @@ const AllOrders = () => {
                       >
                         Edit
                       </button>
-                      <button
-                        onClick={() => updateOrderStatus(order._id, 'cancelled')}
-                        className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
+                      {hasRole('ADMIN') && (
+                        <button
+                          onClick={() => updateOrderStatus(order._id, 'cancelled')}
+                          className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                        >
+                          Delete
+                        </button>
+                      )}
                       {order.status === 'pending' && (
                         <button
                           onClick={() => updateOrderStatus(order._id, 'completed')}
