@@ -1952,27 +1952,52 @@ const EditBookingForm = () => {
                     const newItems = editItems.filter((_, index) => index !== itemIndex);
                     setEditItems(newItems);
                   }}
-                  onToggleNC={async (orderId, type) => {
+                  onToggleNC={async (orderId, type, itemIndex) => {
                     try {
                       const order = roomServiceOrders.find(o => o._id === orderId);
-                      const newNCStatus = !order.nonChargeable;
                       
-                      // Optimistic update
-                      setRoomServiceOrders(prev => 
-                        prev.map(o => 
-                          o._id === orderId 
-                            ? { ...o, nonChargeable: newNCStatus }
-                            : o
-                        )
-                      );
+                      if (itemIndex !== undefined) {
+                        // Toggle item-level NC
+                        const newItems = [...order.items];
+                        const currentNC = newItems[itemIndex].nonChargeable || newItems[itemIndex].isFree || newItems[itemIndex].nc || false;
+                        const newNC = !currentNC;
+                        
+                        // Update all possible NC properties
+                        newItems[itemIndex].nonChargeable = newNC;
+                        newItems[itemIndex].isFree = newNC;
+                        newItems[itemIndex].nc = newNC;
+                        
+                        // Optimistic update
+                        setRoomServiceOrders(prev => 
+                          prev.map(o => 
+                            o._id === orderId 
+                              ? { ...o, items: newItems }
+                              : o
+                          )
+                        );
+                        
+                        await axios.patch(`/api/room-service/${orderId}`, {
+                          items: newItems
+                        });
+                      } else {
+                        // Toggle order-level NC
+                        const newNCStatus = !order.nonChargeable;
+                        
+                        setRoomServiceOrders(prev => 
+                          prev.map(o => 
+                            o._id === orderId 
+                              ? { ...o, nonChargeable: newNCStatus }
+                              : o
+                          )
+                        );
+                        
+                        await axios.patch(`/api/room-service/${orderId}`, {
+                          nonChargeable: newNCStatus
+                        });
+                      }
                       
-                      await axios.patch(`/api/room-service/${orderId}`, {
-                        nonChargeable: newNCStatus
-                      });
-                      
-                      showToast.success('Order NC status updated');
+                      showToast.success('NC status updated');
                     } catch (err) {
-                      // Revert optimistic update on error
                       await fetchRoomServiceOrders();
                       showToast.error('Failed to update NC status');
                     }
@@ -2058,27 +2083,52 @@ const EditBookingForm = () => {
                     const newItems = editItems.filter((_, index) => index !== itemIndex);
                     setEditItems(newItems);
                   }}
-                  onToggleNC={async (orderId, type) => {
+                  onToggleNC={async (orderId, type, itemIndex) => {
                     try {
                       const order = restaurantOrders.find(o => o._id === orderId);
-                      const newNCStatus = !order.nonChargeable;
                       
-                      // Optimistic update
-                      setRestaurantOrders(prev => 
-                        prev.map(o => 
-                          o._id === orderId 
-                            ? { ...o, nonChargeable: newNCStatus }
-                            : o
-                        )
-                      );
+                      if (itemIndex !== undefined) {
+                        // Toggle item-level NC
+                        const newItems = [...order.items];
+                        const currentNC = newItems[itemIndex].nonChargeable || newItems[itemIndex].isFree || newItems[itemIndex].nc || false;
+                        const newNC = !currentNC;
+                        
+                        // Update all possible NC properties
+                        newItems[itemIndex].nonChargeable = newNC;
+                        newItems[itemIndex].isFree = newNC;
+                        newItems[itemIndex].nc = newNC;
+                        
+                        // Optimistic update
+                        setRestaurantOrders(prev => 
+                          prev.map(o => 
+                            o._id === orderId 
+                              ? { ...o, items: newItems }
+                              : o
+                          )
+                        );
+                        
+                        await axios.patch(`/api/restaurant-orders/${orderId}`, {
+                          items: newItems
+                        });
+                      } else {
+                        // Toggle order-level NC
+                        const newNCStatus = !order.nonChargeable;
+                        
+                        setRestaurantOrders(prev => 
+                          prev.map(o => 
+                            o._id === orderId 
+                              ? { ...o, nonChargeable: newNCStatus }
+                              : o
+                          )
+                        );
+                        
+                        await axios.patch(`/api/restaurant-orders/${orderId}`, {
+                          nonChargeable: newNCStatus
+                        });
+                      }
                       
-                      await axios.patch(`/api/restaurant-orders/${orderId}`, {
-                        nonChargeable: newNCStatus
-                      });
-                      
-                      showToast.success('Order NC status updated');
+                      showToast.success('NC status updated');
                     } catch (err) {
-                      // Revert optimistic update on error
                       await fetchRoomServiceOrders();
                       showToast.error('Failed to update NC status');
                     }

@@ -115,9 +115,23 @@ const RestaurantOrders = ({
             ) : (
               <div className="space-y-2">
                 {order.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="flex justify-between text-sm">
+                  <div key={itemIndex} className="flex justify-between items-center text-sm">
                     <span>{item.name || item.itemName || 'Unknown Item'} x {item.quantity}</span>
-                    <span>{order.nonChargeable ? <span className="text-green-600 font-bold">nc</span> : `₹${item.total || item.totalPrice || (item.price * item.quantity) || 0}`}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className={(item.nonChargeable || item.isFree || item.nc) ? 'line-through text-gray-500' : ''}>
+                        ₹{item.total || item.totalPrice || (item.price * item.quantity) || 0}
+                      </span>
+                      {(item.nonChargeable || item.isFree || item.nc) && <span className="text-xs bg-red-100 text-red-800 px-1 py-0.5 rounded">NC</span>}
+                      <label className="flex items-center space-x-1 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={item.nonChargeable || item.isFree || item.nc || false}
+                          onChange={() => onToggleNC(order._id, 'restaurant', itemIndex)}
+                          className="w-3 h-3"
+                        />
+                        <span>NC</span>
+                      </label>
+                    </div>
                   </div>
                 ))}
               </div>
