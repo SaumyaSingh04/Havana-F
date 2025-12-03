@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 import Pagination from "../common/Pagination";
 import Category from "./Category";
 
 const MenuItems = () => {
   const { axios } = useAppContext();
+  const { hasRole } = useAuth();
   const [menuItems, setMenuItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -311,13 +313,15 @@ const MenuItems = () => {
               >
                 Edit
               </button>
-              <button
-                onClick={() => handleDelete(item._id)}
-                className="px-3 py-1 rounded text-sm flex-1"
-                style={{ backgroundColor: 'hsl(0, 70%, 60%)', color: 'white' }}
-              >
-                Delete
-              </button>
+              {hasRole('ADMIN') && (
+                <button
+                  onClick={() => handleDelete(item._id)}
+                  className="px-3 py-1 rounded text-sm flex-1"
+                  style={{ backgroundColor: 'hsl(0, 70%, 60%)', color: 'white' }}
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </div>
           ))}

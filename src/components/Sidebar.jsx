@@ -95,7 +95,7 @@ const Sidebar = () => {
 
     // Easy Dashboard - Admin only
     if (hasRole('ADMIN')) {
-      items.push({ icon: ChartBarStacked, label: "Easy Dashboard", path: "/easy-dashboard" });
+      items.push({ icon: ChartBarStacked, label: "EZ Dashboard", path: "/easy-dashboard" });
     }
 
     // Booking - Admin, GM, Front Desk
@@ -123,8 +123,8 @@ const Sidebar = () => {
       items.push({ icon: Warehouse, label: "Hotel Inventory", path: "/inventory" });
     }
 
-    // In-Room Dine In - Admin, GM, Staff
-    if (hasRole(['ADMIN', 'GM', 'STAFF'])) {
+    // In-Room Dine In - Admin, GM, Staff, Front Desk
+    if (hasRole(['ADMIN', 'GM', 'STAFF', 'FRONT DESK'])) {
       items.push({
         icon: UtensilsCrossed,
         label: "In-Room Dine In",
@@ -140,8 +140,8 @@ const Sidebar = () => {
       });
     }
 
-    // Room Service - Admin, GM, Staff
-    if (hasRole(['ADMIN', 'GM', 'STAFF'])) {
+    // Room Service - Admin, GM, Staff, Front Desk
+    if (hasRole(['ADMIN', 'GM', 'STAFF', 'FRONT DESK'])) {
       items.push({
         icon: Bell,
         label: "Room Service",
