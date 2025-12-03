@@ -2550,11 +2550,9 @@ const EditBookingForm = () => {
                             <span className="text-blue-600">Total Amount:</span>
                             <div className="font-semibold">₹{(() => {
                               const taxableAmount = Number(formData.rate) || 0;
-                              const discountAmount = taxableAmount * (Number(formData.discountPercent || 0) / 100);
-                              const discountedAmount = taxableAmount - discountAmount;
-                              const cgstAmount = discountedAmount * (Number(formData.cgstRate) / 100);
-                              const sgstAmount = discountedAmount * (Number(formData.sgstRate) / 100);
-                              return formData.nonChargeable ? '0.00' : (discountedAmount + cgstAmount + sgstAmount).toFixed(2);
+                              const cgstAmount = taxableAmount * (Number(formData.cgstRate) / 100);
+                              const sgstAmount = taxableAmount * (Number(formData.sgstRate) / 100);
+                              return formData.nonChargeable ? '0.00' : (taxableAmount + cgstAmount + sgstAmount).toFixed(2);
                             })()}</div>
                           </div>
                           <div>
@@ -2568,11 +2566,9 @@ const EditBookingForm = () => {
                             <span className="text-orange-600">Balance Due:</span>
                             <div className="font-semibold text-orange-700">₹{(() => {
                               const taxableAmount = Number(formData.rate) || 0;
-                              const discountAmount = taxableAmount * (Number(formData.discountPercent || 0) / 100);
-                              const discountedAmount = taxableAmount - discountAmount;
-                              const cgstAmount = discountedAmount * (Number(formData.cgstRate) / 100);
-                              const sgstAmount = discountedAmount * (Number(formData.sgstRate) / 100);
-                              const totalAmount = formData.nonChargeable ? 0 : discountedAmount + cgstAmount + sgstAmount;
+                              const cgstAmount = taxableAmount * (Number(formData.cgstRate) / 100);
+                              const sgstAmount = taxableAmount * (Number(formData.sgstRate) / 100);
+                              const totalAmount = formData.nonChargeable ? 0 : taxableAmount + cgstAmount + sgstAmount;
                               const totalAdvance = (formData.advancePayments || []).reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
                               const balance = totalAmount - totalAdvance;
                               return Math.max(0, balance).toFixed(2);
