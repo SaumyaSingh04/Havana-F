@@ -303,6 +303,24 @@ const Order = () => {
                               <div className="font-medium text-gray-800">{item.name}</div>
                               <div className="text-xs text-gray-500">{categories.find(cat => cat._id === item.category)?.name || item.foodType}</div>
                               <div className="text-xs text-[#c3ad6b]">₹{(item.Price || item.price || 0).toFixed(2)} each</div>
+                              {hasRole(['ADMIN', 'GM']) && (
+                                <label className="flex items-center gap-1 mt-1">
+                                  <input
+                                    type="checkbox"
+                                    checked={item.isFree || false}
+                                    onChange={(e) => {
+                                      const updatedItems = cartItems.map(cartItem => 
+                                        cartItem._id === item._id 
+                                          ? { ...cartItem, isFree: e.target.checked }
+                                          : cartItem
+                                      );
+                                      setCartItems(updatedItems);
+                                    }}
+                                    className="h-3 w-3 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                                  />
+                                  <span className="text-xs text-orange-600">NC</span>
+                                </label>
+                              )}
                             </div>
                           </td>
                           <td className="py-3 text-center">
@@ -323,7 +341,11 @@ const Order = () => {
                             </div>
                           </td>
                           <td className="py-3 text-right font-semibold text-gray-800">
-                            ₹{((item.Price || item.price || 0) * item.quantity).toFixed(2)}
+                            {item.isFree ? (
+                              <span className="text-green-600 font-bold">FREE</span>
+                            ) : (
+                              <span>₹{((item.Price || item.price || 0) * item.quantity).toFixed(2)}</span>
+                            )}
                           </td>
                           <td className="py-3 text-center">
                             <button
@@ -343,37 +365,18 @@ const Order = () => {
 
             {cartItems.length > 0 && (
               <div className="border-t p-4">
-                {hasRole(['ADMIN', 'GM']) && (
-                  <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={nonChargeable}
-                        onChange={(e) => setNonChargeable(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                      />
-                      <span className="text-orange-600 font-medium text-sm">
-                        Non-Chargeable (GM Authority)
-                      </span>
-                    </label>
-                    {nonChargeable && (
-                      <p className="text-xs text-orange-700 mt-1">
-                        This order will be marked as non-chargeable with ₹0 amount.
-                      </p>
-                    )}
-                  </div>
-                )}
+
                 <div className="space-y-2 mb-4">
-                  {nonChargeable ? (
-                    <div className="text-center py-4">
-                      <div className="text-green-600 font-medium text-lg">
-                        Non-Chargeable Order: ₹0.00
+                  {(() => {
+                    const freeItems = cartItems.filter(item => item.isFree).length;
+                    const paidItems = cartItems.filter(item => !item.isFree).length;
+                    return freeItems > 0 && paidItems === 0 ? (
+                      <div className="text-center py-4">
+                        <div className="text-green-600 font-medium text-lg">
+                          All Items Free: ₹0.00
+                        </div>
                       </div>
-                      <div className="text-xs text-green-600 mt-1">
-                        This order has been marked as non-chargeable by authorized personnel.
-                      </div>
-                    </div>
-                  ) : (
+                    ) : (
                     <>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-600">Subtotal:</span>
@@ -394,7 +397,8 @@ const Order = () => {
                         </div>
                       </div>
                     </>
-                  )}
+                    );
+                  })()}
                 </div>
                 <div className="space-y-2">
                   <button
@@ -405,7 +409,10 @@ const Order = () => {
                   </button>
                   <button
                     className="w-full py-3 px-4 rounded-md text-white bg-gradient-to-r from-[#c3ad6b] to-[#b39b5a] font-semibold hover:from-[#b39b5a] hover:to-[#c3ad6b] transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={() => handlePlaceOrder(nonChargeable, navigate)}
+                    onClick={() => {
+                      const hasAnyFreeItems = cartItems.some(item => item.isFree);
+                      handlePlaceOrder(hasAnyFreeItems, navigate);
+                    }}
                     disabled={isPlacingOrder}
                   >
                     {isPlacingOrder ? 'Placing Order...' : 'Place Order'}

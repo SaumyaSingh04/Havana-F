@@ -52,7 +52,7 @@ export default function RestaurantInvoice() {
           checkInDate: new Date(order.createdAt || Date.now()).toLocaleDateString(),
           checkOutDate: new Date(order.createdAt || Date.now()).toLocaleDateString()
         },
-        items: order.nonChargeable ? [] : (order.items?.map((item) => ({
+        items: order.items?.map((item) => ({
           date: new Date(order.createdAt || Date.now()).toLocaleDateString(),
           particulars: item.itemName || item.name || 'Unknown Item',
           pax: item.quantity || 1,
@@ -61,8 +61,9 @@ export default function RestaurantInvoice() {
           rate: order.gstRate || 5,
           cgstRate: order.cgstAmount || ((item.price || item.Price || 0) * (order.cgstRate || 2.5)) / 100,
           sgstRate: order.sgstAmount || ((item.price || item.Price || 0) * (order.sgstRate || 2.5)) / 100,
-          amount: (item.price || item.Price || 0) * (item.quantity || 1)
-        })) || [])
+          amount: item.isFree ? 0 : ((item.price || item.Price || 0) * (item.quantity || 1)),
+          isFree: item.isFree || false
+        })) || []
       };
       
       // Calculate GST amounts if not present in order
@@ -375,9 +376,24 @@ export default function RestaurantInvoice() {
                     <td className="p-1 border border-black text-center">{index + 1}</td>
                     <td className="p-1 border border-black">{item.particulars}</td>
                     <td className="p-1 border border-black text-center">{item.pax}</td>
-                    <td className="p-1 border border-black text-right">₹{item.declaredRate?.toFixed(2)}</td>
+                    <td className="p-1 border border-black text-right">
+                      {item.isFree ? (
+                        <div>
+                          <span className="line-through text-gray-400">₹{item.declaredRate?.toFixed(2)}</span>
+                          <div className="text-green-600 font-bold text-xs">NC</div>
+                        </div>
+                      ) : (
+                        <span>₹{item.declaredRate?.toFixed(2)}</span>
+                      )}
+                    </td>
                     <td className="p-1 border border-black text-center">{item.hsn}</td>
-                    <td className="p-1 border border-black text-right font-bold">₹{item.amount?.toFixed(2)}</td>
+                    <td className="p-1 border border-black text-right font-bold">
+                      {item.isFree ? (
+                        <span className="text-green-600">NC</span>
+                      ) : (
+                        <span>₹{item.amount?.toFixed(2)}</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 <tr className="border border-black bg-gray-100">
