@@ -262,7 +262,8 @@ export const useOrderManagement = (location) => {
         itemName: item.name,
         price: item.Price || 0,
         quantity: item.quantity,
-        note: item.note || ''
+        note: item.note || '',
+        isFree: item.isFree || false
       }));
       
       const gstAmounts = getGstAmounts();
