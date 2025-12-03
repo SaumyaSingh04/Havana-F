@@ -718,9 +718,7 @@ export default function Invoice() {
                     <tr className="bg-gray-200">
                       <th className="p-0.5 border border-black text-xs whitespace-nowrap">Tax%</th>
                       <th className="p-0.5 border border-black text-xs whitespace-nowrap">Txb.Amt</th>
-                      <th className="p-0.5 border border-black text-xs whitespace-nowrap">Rec.No.</th>
                       <th className="p-0.5 border border-black text-xs whitespace-nowrap">PayType</th>
-                      <th className="p-0.5 border border-black text-xs whitespace-nowrap">Rec.DL</th>
                       <th className="p-0.5 border border-black text-xs whitespace-nowrap">Rec.Amt</th>
                     </tr>
                   </thead>
@@ -734,13 +732,11 @@ export default function Invoice() {
                         }, 0);
                         return taxableAmount.toFixed(2);
                       })()}</td>
-                      <td className="p-0.5 border border-black text-center text-xs">1706</td>
                       <td className="p-0.5 border border-black text-center text-xs">{bookingData?.paymentMode || ''}</td>
-                      <td className="p-0.5 border border-black text-center text-xs">11/08/25</td>
                       <td className="p-0.5 border border-black text-right text-xs">{invoiceData.payment?.total?.toFixed(2)}</td>
                     </tr>
                     <tr>
-                      <td colSpan="5" className="p-0.5 border border-black font-bold text-right text-xs">Total</td>
+                      <td colSpan="3" className="p-0.5 border border-black font-bold text-right text-xs">Total</td>
                       <td className="p-0.5 border border-black text-right font-bold text-xs">{invoiceData.payment?.total?.toFixed(2)}</td>
                     </tr>
                   </tbody>
@@ -848,23 +844,7 @@ export default function Invoice() {
                 </table>
               </div>
               
-              <div>
-                <p className="font-bold mb-1">Other Charges</p>
-                <table className="w-full border-collapse border border-black">
-                  <thead>
-                    <tr className="bg-gray-200">
-                      <th className="p-0.5 border border-black text-xs">Particulars</th>
-                      <th className="p-0.5 border border-black text-xs">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="bg-gray-200">
-                      <td className="p-0.5 border border-black font-bold text-right text-xs">Total:</td>
-                      <td className="p-0.5 border border-black text-right font-bold text-xs">₹0.00</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+
             </div>
           </div>
         </div>

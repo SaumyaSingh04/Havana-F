@@ -321,8 +321,8 @@ const BookingPage = () => {
         <>
           {/* Desktop Table View */}
           <div className="hidden md:block rounded-xl shadow-lg overflow-hidden bg-white" style={{ border: '1px solid hsl(45, 100%, 85%)' }}>
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
+          <div className="overflow-x-scroll overflow-y-auto max-h-96 booking-table-scroll">
+            <table className="min-w-full" style={{ minWidth: '1200px' }}>
               <thead className="border-b" style={{ backgroundColor: 'hsl(45, 100%, 90%)', borderColor: 'hsl(45, 100%, 85%)' }}>
                 <tr>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>

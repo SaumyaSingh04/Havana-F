@@ -35,3 +35,28 @@
 *::-webkit-scrollbar {
   display: none; /* WebKit */
 }
+
+/* Show scrollbars for booking table */
+.booking-table-scroll {
+  scrollbar-width: thin !important;
+  -ms-overflow-style: scrollbar !important;
+}
+
+.booking-table-scroll::-webkit-scrollbar {
+  display: block !important;
+  width: 8px;
+  height: 8px;
+}
+
+.booking-table-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.booking-table-scroll::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.booking-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
