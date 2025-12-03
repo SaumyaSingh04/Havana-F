@@ -270,7 +270,6 @@ export const AppProvider = ({ children }) => {
   const [showCompanyDetails, setShowCompanyDetails] = useState(false);
   const [formData, setFormData] = useState({
     grcNo: '',
-    invoiceNumber: '',
     reservationId: '',
     categoryId: '',
     bookingDate: new Date().toISOString().split('T')[0],
@@ -444,7 +443,7 @@ export const AppProvider = ({ children }) => {
   // --- Form Reset Logic ---
   const resetForm = () => {
     setFormData({
-      grcNo: '', invoiceNumber: '', reservationId: '', categoryId: '', bookingDate: new Date().toISOString().split('T')[0],
+      grcNo: '', reservationId: '', categoryId: '', bookingDate: new Date().toISOString().split('T')[0],
       numberOfRooms: 1, isActive: true, checkInDate: '', checkOutDate: '', days: 0,
       timeIn: '12:00', timeOut: '12:00', salutation: 'mr.', name: '', age: '',
       gender: '', address: '', city: '', nationality: '', mobileNo: '', email: '',
@@ -467,7 +466,6 @@ export const AppProvider = ({ children }) => {
       paymentStatus: 'Pending', bookingRefNo: '', mgmtBlock: 'No', billingInstruction: '',
       temperature: '', fromCSV: false, epabx: false, vip: false, status: 'Booked',
       extensionHistory: [],
-      invoiceNumber: '',
     });
     setSelectedRooms([]);
     setSearchGRC('');
@@ -928,7 +926,6 @@ const App = () => {
         setFormData({
           // New booking details
           grcNo: newGrcNo,
-          invoiceNumber: formData.invoiceNumber,
           reservationId: '',
           categoryId: '',
           bookingDate: new Date().toISOString().split('T')[0],
@@ -1378,7 +1375,7 @@ const App = () => {
     delete cleanFormData.__v;
     delete cleanFormData.createdAt;
     delete cleanFormData.updatedAt;
-    delete cleanFormData.invoiceNumber; // Remove to force backend generation
+
     
     // Ensure numeric fields are properly formatted
     cleanFormData.age = cleanFormData.age ? Number(cleanFormData.age) : 0;
@@ -1526,19 +1523,7 @@ const App = () => {
                 className="bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="invoiceNumber">Invoice No.</Label>
-              <Input
-                id="invoiceNumber"
-                name="invoiceNumber"
-                value="Will be generated automatically"
-                readOnly
-                className="bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                💡 Invoice number will be assigned when booking is submitted
-              </p>
-            </div>
+
             <div className="space-y-1">
               <Label htmlFor="searchGRC">Search by GRC (Returning Customer)</Label>
               <Input

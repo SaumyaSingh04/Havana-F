@@ -329,9 +329,6 @@ const BookingPage = () => {
                     GRC No
                   </th>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
-                    Invoice No
-                  </th>
-                  <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
                     Name
                   </th>
                   <th className="px-2 sm:px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(45, 100%, 20%)' }}>
@@ -371,9 +368,6 @@ const BookingPage = () => {
                   >
                     <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                       {booking.grcNo}
-                    </td>
-                    <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
-                      {booking._raw?.invoiceNumber || 'N/A'}
                     </td>
                     <td className="px-2 sm:px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'hsl(45, 100%, 20%)' }}>
                       {booking.name}
@@ -532,7 +526,7 @@ const BookingPage = () => {
                         {booking.status === 'Booked' && (
                           <button
                             onClick={() => {
-                              if (confirm(`CHECK-IN CONFIRMATION\n\nGuest: ${booking.name}\nGRC No: ${booking.grcNo}\nInvoice No: ${booking._raw?.invoiceNumber || 'N/A'}\nRoom: ${booking.roomNumber}\n\nAre you sure you want to check in this guest?`)) {
+                              if (confirm(`CHECK-IN CONFIRMATION\n\nGuest: ${booking.name}\nGRC No: ${booking.grcNo}\nRoom: ${booking.roomNumber}\n\nAre you sure you want to check in this guest?`)) {
                                 updateBookingStatus(booking.id, 'Checked In');
                               }
                             }}
@@ -587,7 +581,6 @@ const BookingPage = () => {
                 <div>
                   <h3 className="font-semibold text-lg" style={{ color: 'hsl(45, 100%, 20%)' }}>{booking.name}</h3>
                   <p className="text-sm" style={{ color: 'hsl(45, 100%, 40%)' }}>GRC: {booking.grcNo}</p>
-                  <p className="text-sm" style={{ color: 'hsl(45, 100%, 40%)' }}>Invoice: {booking._raw?.invoiceNumber || 'N/A'}</p>
                 </div>
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -756,7 +749,7 @@ const BookingPage = () => {
                 {booking.status === 'Booked' && (
                   <button
                     onClick={() => {
-                      if (confirm(`CHECK-IN CONFIRMATION\n\nGuest: ${booking.name}\nGRC No: ${booking.grcNo}\nInvoice No: ${booking._raw?.invoiceNumber || 'N/A'}\nRoom: ${booking.roomNumber}\n\nAre you sure you want to check in this guest?`)) {
+                      if (confirm(`CHECK-IN CONFIRMATION\n\nGuest: ${booking.name}\nGRC No: ${booking.grcNo}\nRoom: ${booking.roomNumber}\n\nAre you sure you want to check in this guest?`)) {
                         updateBookingStatus(booking.id, 'Checked In');
                       }
                     }}
