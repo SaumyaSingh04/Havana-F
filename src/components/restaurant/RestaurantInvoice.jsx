@@ -214,27 +214,48 @@ export default function RestaurantInvoice() {
           }
           .no-print { display: none !important; }
           @page { 
-            margin: 0.5in; 
+            margin: 0.2in; 
             size: A4;
           }
           body { margin: 0; padding: 0; background: white !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .print-content { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .client-details-grid { display: table !important; width: 100% !important; page-break-inside: avoid !important; }
+          .client-details-left, .client-details-right { display: table-cell !important; vertical-align: top !important; page-break-inside: avoid !important; }
+          .client-details-left { border-right: 1px solid black !important; width: 50% !important; }
+          .client-details-right { width: 50% !important; }
+          .contact-info {
+            position: absolute !important;
+            top: 10px !important;
+            right: 10px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-end !important;
+            font-size: 10px !important;
+          }
         }
       `}</style>
       <div className="min-h-screen bg-white p-2 sm:p-4">
-        <div className="max-w-7xl mx-auto border-2 border-black p-2 sm:p-4 print-content">
+        <div className="max-w-7xl mx-auto border-2 border-black p-2 sm:p-4 print-content relative" style={{
+          backgroundImage: `url(${ashokaLogo})`,
+          backgroundSize: '40%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}>
+          <div className="absolute inset-0 bg-white/80 pointer-events-none"></div>
+          <div className="relative z-10">
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-4 space-y-4 lg:space-y-0">
             <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
-              <div className="border border-black p-2">
-                <div className="w-8 h-8 sm:w-10 sm:h-10">
-                  <img src={ashokaLogo} alt="Havana Logo" className="w-full h-full object-contain" />
-                </div>
+              <div className="w-20 h-20 sm:w-24 sm:h-24">
+                <img src={ashokaLogo} alt="Havana Logo" className="w-full h-full object-contain" />
               </div>
               <div className="text-xs text-center sm:text-left">
-                <p className="font-bold text-sm sm:text-base">HAVANA HOTEL</p>
+                <p className="font-bold text-sm sm:text-base">HOTEL HAVANA </p>
                 <p className="text-xs">Deoria Bypass Rd, near LIC Office Gorakhpur</p>
                 <p className="text-xs">Taramandal, Gorakhpur, Uttar Pradesh 273016</p>
-                <p className="text-xs">Website: <a href="http://havana-hotel.com" className="text-blue-600">havana-hotel.com</a></p>
+                <p className="text-xs">Website: <a href="https://hotelhavana.com" className="text-blue-600">hotelhavana.com</a></p>
                 <p className="text-xs">contact@hotelhavana.in</p>
+                <p className="text-xs font-semibold">GSTIN: 09ACIFA2416J1ZF</p>
               </div>
             </div>
             <div className="contact-info flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
@@ -446,6 +467,7 @@ export default function RestaurantInvoice() {
             </div>
             <p className="mt-4 text-center text-lg font-bold">Thank You, Visit Again</p>
           </div>
+        </div>
         </div>
       </div>
     </>
