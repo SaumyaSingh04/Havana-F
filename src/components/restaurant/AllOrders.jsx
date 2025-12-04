@@ -16,14 +16,30 @@ const AllOrders = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [bookingFilter, setBookingFilter] = useState('');
+  const [allBookings, setAllBookings] = useState([]);
 
   useEffect(() => {
     fetchOrders();
+    fetchBookings();
   }, []);
 
   useEffect(() => {
     filterOrders();
-  }, [orders, searchQuery, statusFilter, dateFilter]);
+  }, [orders, searchQuery, statusFilter, dateFilter, bookingFilter]);
+
+  const fetchBookings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/bookings/all', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const bookingData = Array.isArray(response.data) ? response.data : (response.data.bookings || []);
+      setAllBookings(bookingData);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -67,6 +83,11 @@ const AllOrders = () => {
         const orderDate = new Date(order.createdAt);
         return orderDate.toDateString() === filterDate.toDateString();
       });
+    }
+
+    // Booking filter
+    if (bookingFilter && bookingFilter !== 'all') {
+      filtered = filtered.filter(order => order.bookingId?._id === bookingFilter);
     }
 
     setFilteredOrders(filtered);
@@ -148,7 +169,7 @@ const AllOrders = () => {
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
             <input
@@ -184,12 +205,28 @@ const AllOrders = () => {
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Booking</label>
+            <select
+              value={bookingFilter}
+              onChange={(e) => setBookingFilter(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Bookings</option>
+              {allBookings.filter(booking => booking.status === 'Checked In').map(booking => (
+                <option key={booking._id} value={booking._id}>
+                  {booking.grcNo} - {booking.name} (Room {booking.roomNumber})
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-end">
             <button
               onClick={() => {
                 setSearchQuery('');
                 setStatusFilter('');
                 setDateFilter('');
+                setBookingFilter('');
               }}
               className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
             >
@@ -321,12 +358,20 @@ const AllOrders = () => {
                         </button>
                       )}
                       {order.status === 'pending' && (
-                        <button
-                          onClick={() => updateOrderStatus(order._id, 'completed')}
-                          className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
-                        >
-                          Complete
-                        </button>
+                        <>
+                          <button
+                            onClick={() => updateOrderStatus(order._id, 'completed')}
+                            className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                          >
+                            Complete
+                          </button>
+                          <button
+                            onClick={() => navigate(`/restaurant/invoice/${order._id}`, { state: { orderData: order } })}
+                            className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                          >
+                            Invoice
+                          </button>
+                        </>
                       )}
                       {(order.status === 'completed' || order.status === 'served') && (
                         <button

@@ -32,6 +32,19 @@ export default function RestaurantInvoice() {
         throw new Error('Order not found');
       }
 
+      // Fetch all orders for this booking if bookingId exists
+      let allBookingOrders = [order];
+      if (order.bookingId) {
+        try {
+          const allOrdersResponse = await axios.get('/api/restaurant-orders/all', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          allBookingOrders = allOrdersResponse.data.filter(o => o.bookingId?._id === order.bookingId._id || o.bookingId === order.bookingId._id);
+        } catch (error) {
+          console.error('Error fetching booking orders:', error);
+        }
+      }
+
       const invoiceData = {
         clientDetails: {
           name: order.customerName || 'Guest',
@@ -52,27 +65,30 @@ export default function RestaurantInvoice() {
           checkInDate: new Date(order.createdAt || Date.now()).toLocaleDateString(),
           checkOutDate: new Date(order.createdAt || Date.now()).toLocaleDateString()
         },
-        items: order.items?.map((item) => ({
-          date: new Date(order.createdAt || Date.now()).toLocaleDateString(),
-          particulars: `${item.itemName || item.name || 'Unknown Item'}${item.isFree ? ' (NC)' : ''}`,
-          pax: item.quantity || 1,
-          declaredRate: item.price || item.Price || 0,
-          hsn: '996331',
-          rate: order.gstRate || 5,
-          cgstRate: order.cgstAmount || ((item.price || item.Price || 0) * (order.cgstRate || 2.5)) / 100,
-          sgstRate: order.sgstAmount || ((item.price || item.Price || 0) * (order.sgstRate || 2.5)) / 100,
-          amount: item.isFree ? 0 : ((item.price || item.Price || 0) * (item.quantity || 1)),
-          isFree: item.isFree || false
-        })) || []
+        items: allBookingOrders.flatMap(orderItem => 
+          orderItem.items?.map((item) => ({
+            date: new Date(orderItem.createdAt || Date.now()).toLocaleDateString(),
+            particulars: `${item.itemName || item.name || 'Unknown Item'}${item.isFree ? ' (NC)' : ''}`,
+            pax: item.quantity || 1,
+            declaredRate: item.price || item.Price || 0,
+            hsn: '996331',
+            rate: orderItem.gstRate || 5,
+            cgstRate: orderItem.cgstAmount || ((item.price || item.Price || 0) * (orderItem.cgstRate || 2.5)) / 100,
+            sgstRate: orderItem.sgstAmount || ((item.price || item.Price || 0) * (orderItem.sgstRate || 2.5)) / 100,
+            amount: item.isFree ? 0 : ((item.price || item.Price || 0) * (item.quantity || 1)),
+            isFree: item.isFree || false
+          })) || []
+        ) || []
       };
       
-      // Calculate GST amounts if not present in order
-      const subtotal = order.nonChargeable ? 0 : (order.subtotal || order.amount || 0);
-      const sgstRate = order.sgstRate || 2.5;
-      const cgstRate = order.cgstRate || 2.5;
-      const sgstAmount = order.nonChargeable ? 0 : (order.sgstAmount || (subtotal * sgstRate) / 100);
-      const cgstAmount = order.nonChargeable ? 0 : (order.cgstAmount || (subtotal * cgstRate) / 100);
-      const totalWithGst = order.nonChargeable ? 0 : (subtotal + sgstAmount + cgstAmount);
+      // Calculate totals from all booking orders
+      const subtotal = allBookingOrders.reduce((sum, orderItem) => 
+        sum + (orderItem.nonChargeable ? 0 : (orderItem.subtotal || orderItem.amount || 0)), 0);
+      const sgstAmount = allBookingOrders.reduce((sum, orderItem) => 
+        sum + (orderItem.nonChargeable ? 0 : (orderItem.sgstAmount || 0)), 0);
+      const cgstAmount = allBookingOrders.reduce((sum, orderItem) => 
+        sum + (orderItem.nonChargeable ? 0 : (orderItem.cgstAmount || 0)), 0);
+      const totalWithGst = subtotal + sgstAmount + cgstAmount;
       
       invoiceData.taxes = [{
         taxableAmount: subtotal,
@@ -85,7 +101,9 @@ export default function RestaurantInvoice() {
         taxableAmount: subtotal,
         cgst: cgstAmount,
         sgst: sgstAmount,
-        total: totalWithGst
+        total: totalWithGst,
+        sgstRate: allBookingOrders[0]?.sgstRate || 2.5,
+        cgstRate: allBookingOrders[0]?.cgstRate || 2.5
       };
       
       invoiceData.otherCharges = [
@@ -272,7 +290,7 @@ export default function RestaurantInvoice() {
 
           <div className="flex justify-between items-center mb-4">
             <div className="text-center font-bold text-lg flex-1">
-              RESTAURANT TAX INVOICE
+              {(invoiceData.payment?.sgst > 0 || invoiceData.payment?.cgst > 0) ? 'RESTAURANT TAX INVOICE' : 'RESTAURANT INVOICE'}
             </div>
             <div className="flex gap-2 no-print">
               <button
@@ -286,19 +304,6 @@ export default function RestaurantInvoice() {
           
           <div className="client-details-grid grid grid-cols-1 lg:grid-cols-2 text-xs border border-black mb-4">
             <div className="client-details-left border-r border-black p-2">
-              <p><span className="font-bold">GSTIN No. : </span>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={invoiceData.clientDetails?.gstin || ''}
-                    onChange={(e) => setInvoiceData({
-                      ...invoiceData,
-                      clientDetails: {...invoiceData.clientDetails, gstin: e.target.value}
-                    })}
-                    className="border px-1 ml-1 text-xs w-32"
-                  />
-                ) : invoiceData.clientDetails?.gstin}
-              </p>
               <div className="client-info-grid grid grid-cols-3 gap-x-1 gap-y-1">
                 <p className="col-span-1">Name</p>
                 <p className="col-span-2">: {isEditing ? (
@@ -312,62 +317,11 @@ export default function RestaurantInvoice() {
                       className="border px-1 ml-1 text-xs w-32"
                     />
                   ) : invoiceData.clientDetails?.name}</p>
-                <p className="col-span-1">Address</p>
-                <p className="col-span-2">: {isEditing ? (
-                    <input
-                      type="text"
-                      value={invoiceData.clientDetails?.address || ''}
-                      onChange={(e) => setInvoiceData({
-                        ...invoiceData,
-                        clientDetails: {...invoiceData.clientDetails, address: e.target.value}
-                      })}
-                      className="border px-1 ml-1 text-xs w-32"
-                    />
-                  ) : invoiceData.clientDetails?.address}</p>
-                <p className="col-span-1">City</p>
-                <p className="col-span-2">: {isEditing ? (
-                    <input
-                      type="text"
-                      value={invoiceData.clientDetails?.city || ''}
-                      onChange={(e) => setInvoiceData({
-                        ...invoiceData,
-                        clientDetails: {...invoiceData.clientDetails, city: e.target.value}
-                      })}
-                      className="border px-1 ml-1 text-xs w-32"
-                    />
-                  ) : invoiceData.clientDetails?.city}</p>
-                <p className="col-span-1">Company</p>
-                <p className="col-span-2">{isEditing ? (
-                    <input
-                      type="text"
-                      value={invoiceData.clientDetails?.company || ''}
-                      onChange={(e) => setInvoiceData({
-                        ...invoiceData,
-                        clientDetails: {...invoiceData.clientDetails, company: e.target.value}
-                      })}
-                      className="border px-1 ml-1 text-xs w-32"
-                    />
-                  ) : (invoiceData.clientDetails?.company?.startsWith(':') ? invoiceData.clientDetails.company : `: ${invoiceData.clientDetails?.company || ''}`)}</p>
-                <p className="col-span-1">Mobile No.</p>
-                <p className="col-span-2">: {isEditing ? (
-                    <input
-                      type="text"
-                      value={invoiceData.clientDetails?.mobileNo || ''}
-                      onChange={(e) => setInvoiceData({
-                        ...invoiceData,
-                        clientDetails: {...invoiceData.clientDetails, mobileNo: e.target.value}
-                      })}
-                      className="border px-1 ml-1 text-xs w-32"
-                    />
-                  ) : invoiceData.clientDetails?.mobileNo}</p>
               </div>
-            </div>
-
-            <div className="client-details-right p-2">
-              <div className="invoice-info-grid grid grid-cols-2 gap-y-1">
+              <div className="invoice-info-grid grid grid-cols-2 gap-y-1 mt-4">
                 <p className="font-bold">Bill No. & Date</p>
                 <p className="font-medium">: {invoiceData.invoiceDetails?.billNo} {invoiceData.invoiceDetails?.billDate}</p>
-                <p className="font-bold">Order No.</p>
+                <p className="font-bold">GRC No.</p>
                 <p className="font-medium">: {invoiceData.invoiceDetails?.grcNo}</p>
                 <p className="font-bold">Table/Room</p>
                 <p className="font-medium">: {invoiceData.invoiceDetails?.roomNo}</p>
@@ -376,6 +330,9 @@ export default function RestaurantInvoice() {
                 <p className="font-bold">Order Time</p>
                 <p className="font-medium">: {new Date().toLocaleTimeString()}</p>
               </div>
+            </div>
+
+            <div className="client-details-right p-2">
             </div>
           </div>
 
@@ -419,14 +376,18 @@ export default function RestaurantInvoice() {
                     <td className="p-1 text-right text-xs font-medium">Subtotal:</td>
                     <td className="p-1 border-l border-black text-right text-xs">₹{invoiceData.payment?.taxableAmount?.toFixed(2) || '0.00'}</td>
                   </tr>
-                  <tr>
-                    <td className="p-1 text-right text-xs font-medium">SGST (2.5%):</td>
-                    <td className="p-1 border-l border-black text-right text-xs">₹{invoiceData.payment?.sgst?.toFixed(2) || '0.00'}</td>
-                  </tr>
-                  <tr>
-                    <td className="p-1 text-right text-xs font-medium">CGST (2.5%):</td>
-                    <td className="p-1 border-l border-black text-right text-xs">₹{invoiceData.payment?.cgst?.toFixed(2) || '0.00'}</td>
-                  </tr>
+                  {invoiceData.payment?.sgst > 0 && (
+                    <tr>
+                      <td className="p-1 text-right text-xs font-medium">SGST ({invoiceData.payment?.sgstRate || 2.5}%):</td>
+                      <td className="p-1 border-l border-black text-right text-xs">₹{invoiceData.payment.sgst.toFixed(2)}</td>
+                    </tr>
+                  )}
+                  {invoiceData.payment?.cgst > 0 && (
+                    <tr>
+                      <td className="p-1 text-right text-xs font-medium">CGST ({invoiceData.payment?.cgstRate || 2.5}%):</td>
+                      <td className="p-1 border-l border-black text-right text-xs">₹{invoiceData.payment.cgst.toFixed(2)}</td>
+                    </tr>
+                  )}
                   <tr className="bg-gray-200">
                     <td className="p-1 font-bold text-right text-xs">NET AMOUNT:</td>
                     <td className="p-1 border-l border-black text-right font-bold text-xs">₹{calculateNetTotal()}</td>

@@ -16,6 +16,7 @@ const CreateRoomService = () => {
   });
   const [orderItems, setOrderItems] = useState([]);
   const [availableItems, setAvailableItems] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -23,6 +24,7 @@ const CreateRoomService = () => {
   useEffect(() => {
     fetchItems();
     fetchBookings();
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -52,11 +54,42 @@ const CreateRoomService = () => {
           id: item._id,
           name: item.itemName || item.name,
           price: item.pricePerUnit || item.sellingPrice || item.price || 0,
-          stock: item.currentStock || item.stock || 0
+          stock: item.currentStock || item.stock || 0,
+          category: item.categoryId?.name || 'Other'
         })));
       }
     } catch (error) {
       console.error('Error fetching items:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/inventory-categories/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Filter out restaurant-related categories
+        const nonRestaurantCategories = data.filter(cat => 
+          cat.isActive && 
+          !cat.name.toLowerCase().includes('restaurant') &&
+          !cat.name.toLowerCase().includes('food') &&
+          !cat.name.toLowerCase().includes('beverage')
+        );
+        setCategories(nonRestaurantCategories);
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories');
+      // Fallback categories
+      setCategories([
+        { _id: 'fallback1', name: 'Housekeeping' },
+        { _id: 'fallback2', name: 'Laundry' },
+        { _id: 'fallback3', name: 'Maintenance' },
+        { _id: 'fallback4', name: 'Other' }
+      ]);
     }
   };
 
@@ -271,21 +304,36 @@ const CreateRoomService = () => {
                     Select Service Category
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {['Restaurant', 'Laundry', 'Housekeeping', 'Maintenance', 'Other'].map(type => (
+                    <button
+                      key="Restaurant"
+                      type="button"
+                      onClick={() => setFormData({...formData, serviceType: 'Restaurant'})}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        formData.serviceType === 'Restaurant' 
+                          ? 'text-white' 
+                          : 'bg-white border'
+                      }`}
+                      style={formData.serviceType === 'Restaurant' ? 
+                        {backgroundColor: '#D4AF37'} : 
+                        {borderColor: '#D4AF37', color: '#B8860B'}}
+                    >
+                      Restaurant
+                    </button>
+                    {categories.map(category => (
                       <button
-                        key={type}
+                        key={category._id}
                         type="button"
-                        onClick={() => setFormData({...formData, serviceType: type})}
+                        onClick={() => setFormData({...formData, serviceType: category.name})}
                         className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                          formData.serviceType === type 
+                          formData.serviceType === category.name 
                             ? 'text-white' 
                             : 'bg-white border'
                         }`}
-                        style={formData.serviceType === type ? 
+                        style={formData.serviceType === category.name ? 
                           {backgroundColor: '#D4AF37'} : 
                           {borderColor: '#D4AF37', color: '#B8860B'}}
                       >
-                        {type}
+                        {category.name}
                       </button>
                     ))}
                   </div>
