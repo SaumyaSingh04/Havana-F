@@ -65,11 +65,30 @@ export default function Invoice() {
 
   // Format date as DD/MM/YYYY
   const formatDate = (date = new Date()) => {
-    const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
+    if (!date || date === 'N/A' || date === 'NaN/NaN/NaN' || date === null || date === undefined) {
+      return new Date().toLocaleDateString('en-GB');
+    }
+    
+    try {
+      // Handle MongoDB $date objects
+      if (date && typeof date === 'object' && date.$date) {
+        const d = new Date(date.$date);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString('en-GB');
+        }
+      }
+      
+      // Handle regular date strings/objects
+      const d = new Date(date);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-GB');
+      }
+      
+      // Fallback to current date
+      return new Date().toLocaleDateString('en-GB');
+    } catch (error) {
+      return new Date().toLocaleDateString('en-GB');
+    }
   };
 
   useEffect(() => {
@@ -193,11 +212,26 @@ export default function Invoice() {
             mappedData.invoiceDetails.grcNo = bookingData.grcNo;
           }
           mappedData.invoiceDetails.billDate = formatDate(mappedData.invoiceDetails.billDate);
-          if (mappedData.invoiceDetails.checkInDate) {
+          // Handle check-in date
+          if (mappedData.invoiceDetails.checkInDate && 
+              mappedData.invoiceDetails.checkInDate !== 'N/A' && 
+              !mappedData.invoiceDetails.checkInDate.includes('NaN')) {
             mappedData.invoiceDetails.checkInDate = formatDate(mappedData.invoiceDetails.checkInDate);
+          } else if (bookingData?.checkInDate) {
+            mappedData.invoiceDetails.checkInDate = formatDate(bookingData.checkInDate);
+          } else {
+            mappedData.invoiceDetails.checkInDate = 'N/A';
           }
-          if (mappedData.invoiceDetails.checkOutDate) {
+          
+          // Handle check-out date
+          if (mappedData.invoiceDetails.checkOutDate && 
+              mappedData.invoiceDetails.checkOutDate !== 'N/A' && 
+              !mappedData.invoiceDetails.checkOutDate.includes('NaN')) {
             mappedData.invoiceDetails.checkOutDate = formatDate(mappedData.invoiceDetails.checkOutDate);
+          } else if (bookingData?.checkOutDate) {
+            mappedData.invoiceDetails.checkOutDate = formatDate(bookingData.checkOutDate);
+          } else {
+            mappedData.invoiceDetails.checkOutDate = 'N/A';
           }
         }
         
@@ -367,12 +401,12 @@ export default function Invoice() {
     }, 0) || 0;
     const exactTotal = totalTaxableAmount + sgst + cgst + otherChargesTotal;
     const roundedTotal = Math.round(exactTotal);
-    const roundOff = Math.round((roundedTotal - exactTotal) * 100) / 100;
+    const roundOff = (roundedTotal - exactTotal);
     return roundOff;
   };
 
   const calculateNetTotal = () => {
-    if (!invoiceData) return '0.00';
+    if (!invoiceData) return '0';
     
     // Only room charges (including extra beds) are taxable
     const roomCharges = invoiceData.items?.filter(item => 
@@ -404,7 +438,7 @@ export default function Invoice() {
     // Net total = total taxable amount + taxes + round off
     const netTotal = totalTaxableAmount + sgst + cgst + roundOff;
     
-    return netTotal.toFixed(2);
+    return netTotal.toString();
   };
 
   const handlePrint = useReactToPrint({
@@ -648,9 +682,9 @@ export default function Invoice() {
                 )}
               </p>
               <p className="font-bold">CheckIn Date</p>
-              <p className="font-medium">: {invoiceData.invoiceDetails?.checkInDate}</p>
+              <p className="font-medium">: {bookingData?.checkInDate ? formatDate(bookingData.checkInDate) : (invoiceData.invoiceDetails?.checkInDate && invoiceData.invoiceDetails.checkInDate !== 'N/A' ? invoiceData.invoiceDetails.checkInDate : formatDate())}</p>
               <p className="font-bold">CheckOut Date</p>
-              <p className="font-medium">: {invoiceData.invoiceDetails?.checkOutDate}</p>
+              <p className="font-medium">: {bookingData?.checkOutDate ? formatDate(bookingData.checkOutDate) : (invoiceData.invoiceDetails?.checkOutDate && invoiceData.invoiceDetails.checkOutDate !== 'N/A' ? invoiceData.invoiceDetails.checkOutDate : formatDate())}</p>
               {bookingData?.planPackage && (
                 <>
                   <p className="font-bold">Package Plan</p>
@@ -759,11 +793,17 @@ export default function Invoice() {
                         return taxableAmount.toFixed(2);
                       })()}</td>
                       <td className="p-0.5 border border-black text-center text-xs">{bookingData?.paymentMode || ''}</td>
-                      <td className="p-0.5 border border-black text-right text-xs">{invoiceData.payment?.total?.toFixed(2)}</td>
+                      <td className="p-0.5 border border-black text-right text-xs">{(() => {
+                        const totalAdvance = bookingData?.advancePayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+                        return totalAdvance.toFixed(2);
+                      })()}</td>
                     </tr>
                     <tr>
                       <td colSpan="3" className="p-0.5 border border-black font-bold text-right text-xs">Total</td>
-                      <td className="p-0.5 border border-black text-right font-bold text-xs">{invoiceData.payment?.total?.toFixed(2)}</td>
+                      <td className="p-0.5 border border-black text-right font-bold text-xs">{(() => {
+                        const totalAdvance = bookingData?.advancePayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+                        return totalAdvance.toFixed(2);
+                      })()}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -892,7 +932,7 @@ export default function Invoice() {
                       <td className="p-0.5 border-l border-black text-right font-bold text-xs">₹{(() => {
                         const netTotal = parseFloat(calculateNetTotal());
                         const totalAdvance = bookingData?.advancePayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
-                        return (netTotal - totalAdvance).toFixed(2);
+                        return (netTotal - totalAdvance).toString();
                       })()}</td>
                     </tr>
 

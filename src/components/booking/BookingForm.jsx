@@ -1348,6 +1348,9 @@ const App = () => {
       photoUrl: formData.photoUrl || '',
       roomNumber: selectedRooms.map(r => r.room_number).join(','),
       numberOfRooms: selectedRooms.length,
+      // Ensure dates are properly formatted
+      checkInDate: formData.checkInDate,
+      checkOutDate: formData.checkOutDate,
     };
     
     // Add room rates with extra bed information
@@ -1391,6 +1394,13 @@ const App = () => {
     cleanFormData.days = Number(cleanFormData.days) || 0;
     cleanFormData.cgstRate = Number(cleanFormData.cgstRate) || 0;
     cleanFormData.sgstRate = Number(cleanFormData.sgstRate) || 0;
+    
+    // Additional validation for dates
+    if (!cleanFormData.checkInDate || !cleanFormData.checkOutDate) {
+      showToast.error('Check-in and check-out dates are required');
+      setLoading(false);
+      return;
+    }
     
 
     

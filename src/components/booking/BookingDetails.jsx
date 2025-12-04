@@ -3,6 +3,50 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Phone, Mail, MapPin, Calendar, CreditCard, Bed, Users, Edit2, Plus } from 'lucide-react';
 import axios from 'axios';
 
+// Utility function to format dates from MongoDB
+const formatDate = (dateValue) => {
+  if (!dateValue) return "N/A";
+  
+  try {
+    // Handle MongoDB $date objects
+    if (dateValue && typeof dateValue === 'object' && dateValue.$date) {
+      return new Date(dateValue.$date).toLocaleDateString();
+    }
+    
+    // Handle regular date strings/objects
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) {
+      return "Invalid Date";
+    }
+    
+    return date.toLocaleDateString();
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return "Invalid Date";
+  }
+};
+
+// Utility function to calculate days between dates
+const calculateDays = (checkInDate, checkOutDate) => {
+  try {
+    const checkIn = checkInDate && checkInDate.$date 
+      ? new Date(checkInDate.$date) 
+      : new Date(checkInDate);
+    const checkOut = checkOutDate && checkOutDate.$date 
+      ? new Date(checkOutDate.$date) 
+      : new Date(checkOutDate);
+    
+    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+      return 0;
+    }
+    
+    return Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+  } catch (error) {
+    console.error('Date calculation error:', error);
+    return 0;
+  }
+};
+
 const BookingDetails = () => {
   const { bookingId } = useParams(); // This will now be bookingNo
   const navigate = useNavigate();
@@ -153,6 +197,13 @@ const BookingDetails = () => {
             >
               <Edit2 size={18} className="mr-2" />
               Edit
+            </button>
+            <button
+              onClick={() => navigate('/invoice', { state: { bookingData: booking, checkoutId: booking._id } })}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <CreditCard size={18} className="mr-2" />
+              Invoice
             </button>
           </div>
         </div>
@@ -398,19 +449,19 @@ const BookingDetails = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-600">Check-in Date</label>
                   <p className="text-lg font-medium text-gray-800">
-                    {new Date(booking.checkInDate).toLocaleDateString()}
+                    {formatDate(booking.checkInDate)}
                   </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-600">Check-out Date</label>
                   <p className="text-lg font-medium text-gray-800">
-                    {new Date(booking.checkOutDate).toLocaleDateString()}
+                    {formatDate(booking.checkOutDate)}
                   </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-600">Duration</label>
                   <p className="text-lg font-medium text-gray-800">
-                    {Math.ceil((new Date(booking.checkOutDate) - new Date(booking.checkInDate)) / (1000 * 60 * 60 * 24))} nights
+                    {calculateDays(booking.checkInDate, booking.checkOutDate)} nights
                   </p>
                 </div>
               </div>
@@ -498,11 +549,11 @@ const BookingDetails = () => {
               </h2>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Room Cost ({Math.ceil((new Date(booking.checkOutDate) - new Date(booking.checkInDate)) / (1000 * 60 * 60 * 24))} days):</span>
+                  <span className="text-gray-600">Room Cost ({calculateDays(booking.checkInDate, booking.checkOutDate)} days):</span>
                   <span className="font-medium">₹{(() => {
                     // Calculate room cost from room rates if available
                     if (booking.roomRates && booking.roomRates.length > 0) {
-                      const days = Math.ceil((new Date(booking.checkOutDate) - new Date(booking.checkInDate)) / (1000 * 60 * 60 * 24));
+                      const days = calculateDays(booking.checkInDate, booking.checkOutDate);
                       return booking.roomRates.reduce((sum, roomRate) => {
                         return sum + (roomRate.customRate || 0);
                       }, 0) * days;
@@ -789,7 +840,7 @@ const BookingDetails = () => {
                     const sgstAmount = totalSubtotal * (booking.sgstRate || 0.025);
                     const exactTotal = totalSubtotal + cgstAmount + sgstAmount;
                     const roundedTotal = Math.round(exactTotal);
-                    const roundOff = Math.round((roundedTotal - exactTotal) * 100) / 100;
+                    const roundOff = (roundedTotal - exactTotal);
                     return (roundOff >= 0 ? '+' : '') + roundOff.toFixed(2);
                   })()}</span>
                 </div>
@@ -829,9 +880,15 @@ const BookingDetails = () => {
                       const sgstAmount = totalSubtotal * (booking.sgstRate || 0.025);
                       const exactTotal = totalSubtotal + cgstAmount + sgstAmount;
                       const roundedTotal = Math.round(exactTotal);
-                      return roundedTotal.toFixed(2);
+                      return roundedTotal.toString();
                     })()}</span>
                   </div>
+                  {booking.advancePayments && booking.advancePayments.length > 0 && (
+                    <div className="flex justify-between text-lg font-medium text-green-600 mt-2">
+                      <span>Advance Payment:</span>
+                      <span>-₹{booking.advancePayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-xl font-bold text-orange-600 mt-2">
                     <span>BALANCE DUE:</span>
                     <span>₹{(() => {
@@ -872,7 +929,7 @@ const BookingDetails = () => {
                       const exactTotal = totalSubtotal + cgstAmount + sgstAmount;
                       const roundedTotal = Math.round(exactTotal);
                       const totalAdvance = booking.advancePayments?.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0) || 0;
-                      return Math.max(0, (roundedTotal - totalAdvance).toFixed(2));
+                      return Math.max(0, (roundedTotal - totalAdvance)).toString();
                     })()}</span>
                   </div>
                 </div>

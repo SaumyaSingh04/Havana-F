@@ -2,6 +2,29 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 
+// Utility function to format dates from MongoDB
+const formatDate = (dateValue) => {
+  if (!dateValue) return "N/A";
+  
+  try {
+    // Handle MongoDB $date objects
+    if (dateValue && typeof dateValue === 'object' && dateValue.$date) {
+      return new Date(dateValue.$date).toLocaleDateString();
+    }
+    
+    // Handle regular date strings/objects
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) {
+      return "Invalid Date";
+    }
+    
+    return date.toLocaleDateString();
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return "Invalid Date";
+  }
+};
+
 export const useBookingList = () => {
   const navigate = useNavigate();
   const { axios } = useAppContext();
@@ -70,8 +93,8 @@ export const useBookingList = () => {
           mobileNo: b.mobileNo || "N/A",
           roomNumber: b.roomNumber || "N/A",
           category: category?.name || category?.categoryName || "N/A",
-          checkIn: b.checkInDate ? new Date(b.checkInDate).toLocaleDateString() : "N/A",
-          checkOut: b.checkOutDate ? new Date(b.checkOutDate).toLocaleDateString() : "N/A",
+          checkIn: b.checkInDate ? formatDate(b.checkInDate) : "N/A",
+          checkOut: b.checkOutDate ? formatDate(b.checkOutDate) : "N/A",
           status: b.status || "N/A",
           paymentStatus: b.paymentStatus || "Pending",
           vip: b.vip || false,
