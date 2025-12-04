@@ -502,6 +502,10 @@ export default function Invoice() {
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           table { border-collapse: collapse !important; }
           table, th, td { border: 1px solid black !important; }
+          .client-details-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; }
+          .client-details-left { border-right: 1px solid black !important; }
+          .client-info-grid { display: grid !important; grid-template-columns: auto auto 1fr !important; }
+          .invoice-info-grid { display: grid !important; grid-template-columns: auto 1fr !important; }
           .overflow-x-auto { overflow: visible !important; }
           table { page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; }
