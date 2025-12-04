@@ -816,8 +816,10 @@ export default function Invoice() {
                     <tr>
                       <td colSpan="3" className="p-0.5 border border-black font-bold text-right text-xs">Total</td>
                       <td className="p-0.5 border border-black text-right font-bold text-xs">{(() => {
+                        const taxableAmount = invoiceData?.items?.reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0) || 0;
                         const totalAdvance = bookingData?.advancePayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
-                        return totalAdvance.toFixed(2);
+                        const balanceAmount = taxableAmount - totalAdvance;
+                        return balanceAmount.toFixed(2);
                       })()}</td>
                     </tr>
                   </tbody>
