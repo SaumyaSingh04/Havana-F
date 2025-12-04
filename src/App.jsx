@@ -70,22 +70,58 @@ function App() {
             }>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="easy-dashboard" element={<EasyDashboard />} />
+            <Route path="easy-dashboard" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <EasyDashboard />
+              </PrivateRoute>
+            } />
             
             {/* Room Management Routes */}
-            <Route path="rooms" element={<RoomList />} />
-            <Route path="room-categories" element={<CategoryList />} />
-            <Route path="room-status" element={<RoomStatus />} />
+            <Route path="rooms" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <RoomList />
+              </PrivateRoute>
+            } />
+            <Route path="room-categories" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <CategoryList />
+              </PrivateRoute>
+            } />
+            <Route path="room-status" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <RoomStatus />
+              </PrivateRoute>
+            } />
             
             {/* Booking Routes */}
-            <Route path="booking" element={<Booking />} />
-            <Route path="bookingform" element={<BookingForm />} />
-            <Route path="edit-booking/:bookingId" element={<EditBookingForm />} />
-            <Route path="booking-details/:bookingId" element={<BookingDetails />} />
+            <Route path="booking" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <Booking />
+              </PrivateRoute>
+            } />
+            <Route path="bookingform" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <BookingForm />
+              </PrivateRoute>
+            } />
+            <Route path="edit-booking/:bookingId" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <EditBookingForm />
+              </PrivateRoute>
+            } />
+            <Route path="booking-details/:bookingId" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <BookingDetails />
+              </PrivateRoute>
+            } />
             <Route path="reservation" element={<div>Reservation Component</div>} />
             
             {/* Inventory Routes */}
-            <Route path="inventory" element={<HotelInventory />} />
+            <Route path="inventory" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <HotelInventory />
+              </PrivateRoute>
+            } />
             
             {/* Banquet Routes */}
             <Route path="banquet/calendar" element={<LaganCalendar />} />
@@ -104,25 +140,93 @@ function App() {
             } />
             
             {/* Room Service Routes */}
-            <Route path="room-service" element={<RoomService />} />
-            <Route path="room-service/create" element={<CreateRoomService />} />
-            <Route path="room-service/edit/:orderId" element={<EditRoomService />} />
-            <Route path="room-service/details/:id" element={<RoomServiceDetails />} />
-            <Route path="room-service/today" element={<RoomServiceToday />} />
-            <Route path="room-service/history" element={<RoomServiceHistory />} />
-            <Route path="room-service-billing" element={<RoomServiceBilling />} />
-            <Route path="bill-lookup" element={<BillLookup />} />
-            <Route path="sale-bill" element={<SaleBill />} />
+            <Route path="room-service" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <RoomService />
+              </PrivateRoute>
+            } />
+            <Route path="room-service/create" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <CreateRoomService />
+              </PrivateRoute>
+            } />
+            <Route path="room-service/edit/:orderId" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <EditRoomService />
+              </PrivateRoute>
+            } />
+            <Route path="room-service/details/:id" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <RoomServiceDetails />
+              </PrivateRoute>
+            } />
+            <Route path="room-service/today" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <RoomServiceToday />
+              </PrivateRoute>
+            } />
+            <Route path="room-service/history" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <RoomServiceHistory />
+              </PrivateRoute>
+            } />
+            <Route path="room-service-billing" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <RoomServiceBilling />
+              </PrivateRoute>
+            } />
+            <Route path="bill-lookup" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <BillLookup />
+              </PrivateRoute>
+            } />
+            <Route path="sale-bill" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <SaleBill />
+              </PrivateRoute>
+            } />
             
             {/* Restaurant Routes */}
-            <Route path="restaurant/menu-items" element={<MenuItems />} />
-            <Route path="restaurant/create-order" element={<Order />} />
-            <Route path="restaurant/live-orders" element={<LiveOrders />} />
-            <Route path="restaurant/all-orders" element={<AllOrders />} />
-            <Route path="restaurant/edit-order/:orderId" element={<EditOrder />} />
-            <Route path="restaurant/kot" element={<KOT />} />
-            <Route path="restaurant/gst-settings" element={<GSTSettings />} />
-            <Route path="restaurant/invoice/:orderId" element={<RestaurantInvoice />} />
+            <Route path="restaurant/menu-items" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <MenuItems />
+              </PrivateRoute>
+            } />
+            <Route path="restaurant/create-order" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <Order />
+              </PrivateRoute>
+            } />
+            <Route path="restaurant/live-orders" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <LiveOrders />
+              </PrivateRoute>
+            } />
+            <Route path="restaurant/all-orders" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <AllOrders />
+              </PrivateRoute>
+            } />
+            <Route path="restaurant/edit-order/:orderId" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <EditOrder />
+              </PrivateRoute>
+            } />
+            <Route path="restaurant/kot" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'STAFF']}>
+                <KOT />
+              </PrivateRoute>
+            } />
+            <Route path="restaurant/gst-settings" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM']}>
+                <GSTSettings />
+              </PrivateRoute>
+            } />
+            <Route path="restaurant/invoice/:orderId" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <RestaurantInvoice />
+              </PrivateRoute>
+            } />
             
             {/* Checkout Routes */}
             <Route path="hotel-checkout" element={<HotelCheckout />} />

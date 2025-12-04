@@ -93,8 +93,8 @@ const Sidebar = () => {
       { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     ];
 
-    // Easy Dashboard - Admin only
-    if (hasRole('ADMIN')) {
+    // Easy Dashboard - Admin, GM, Front Desk
+    if (hasRole(['ADMIN', 'GM', 'FRONT DESK'])) {
       items.push({ icon: ChartBarStacked, label: "EZ Dashboard", path: "/easy-dashboard" });
     }
 
@@ -118,8 +118,8 @@ const Sidebar = () => {
       });
     }
 
-    // Hotel Inventory - Admin, GM
-    if (hasRole(['ADMIN', 'GM'])) {
+    // Hotel Inventory - Admin, GM, Front Desk
+    if (hasRole(['ADMIN', 'GM', 'FRONT DESK'])) {
       items.push({ icon: Warehouse, label: "Hotel Inventory", path: "/inventory" });
     }
 

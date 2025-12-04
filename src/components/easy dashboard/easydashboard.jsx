@@ -260,15 +260,27 @@ const EasyDashboard = () => {
     // --- Utility Functions (Refactored to be safe with async data) ---
 
     // Memoize utility functions using useCallback for better performance
-    const getRoomCategory = useCallback((room) => { 
-        // Logic handles both embedded category object and category ID
-        const categoryId = typeof room.category === 'object' ? room.category._id : room.category;
-        const category = categories.find(cat => cat._id === categoryId);
-        
-        if (typeof room.category === 'object' && room.category.name) {
-            return room.category.name;
+    const getRoomCategory = useCallback((room) => {
+        // First check if categoryId is already populated with category object
+        if (typeof room.categoryId === 'object' && room.categoryId?.name) {
+            return room.categoryId.name;
         }
-        return category ? category.name : 'Unknown Category';
+        
+        // Handle categoryId as string/ObjectId - match with categories array
+        const categoryId = room.categoryId || room.category;
+        
+        if (categoryId && categories.length > 0) {
+            const category = categories.find(cat => 
+                cat._id === categoryId || 
+                cat._id.toString() === categoryId.toString()
+            );
+            if (category) {
+                return category.name;
+            }
+        }
+        
+        // Fallback to room title or default
+        return room.title || 'Standard Room';
     }, [categories]);
 
     const getRoomBooking = useCallback((roomNumber) => {

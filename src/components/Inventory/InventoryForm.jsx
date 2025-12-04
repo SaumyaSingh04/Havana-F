@@ -3,12 +3,12 @@ import PropTypes from 'prop-types';
 import { X, Package } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-const InventoryForm = ({ item, onClose }) => {
+const InventoryForm = ({ item, categories = [], onClose }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     itemCode: '',
-    category: 'Housekeeping',
+    category: '',
     description: '',
     currentStock: 0,
     minStockLevel: 5,
@@ -23,7 +23,6 @@ const InventoryForm = ({ item, onClose }) => {
     lastPurchased: ''
   });
 
-  const categories = ['Housekeeping', 'Consumables', 'Kitchen', 'Linen', 'Maintenance'];
   const units = ['pieces', 'boxes', 'liters', 'packs', 'kg', 'meters'];
   const locations = ['Store Room', 'Kitchen Store', 'Floor Storage', 'Laundry Room', 'Maintenance Room'];
 
@@ -32,7 +31,7 @@ const InventoryForm = ({ item, onClose }) => {
       setFormData({
         name: item.name || '',
         itemCode: item.itemCode || '',
-        category: item.category || 'Housekeeping',
+        category: item.category || (categories.length > 0 ? categories[0] : ''),
         description: item.description || '',
         currentStock: item.currentStock || 0,
         minStockLevel: item.minStockLevel || 5,
@@ -46,8 +45,10 @@ const InventoryForm = ({ item, onClose }) => {
         pricePerUnit: item.pricePerUnit || 0,
         lastPurchased: item.lastPurchased ? new Date(item.lastPurchased).toISOString().split('T')[0] : ''
       });
+    } else if (categories.length > 0 && !formData.category) {
+      setFormData(prev => ({ ...prev, category: categories[0] }));
     }
-  }, [item]);
+  }, [item, categories]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,6 +69,8 @@ const InventoryForm = ({ item, onClose }) => {
       }));
     }
   };
+
+
 
   const generateItemCode = () => {
     const categoryCode = formData.category.substring(0, 3).toUpperCase();
@@ -397,6 +400,7 @@ const InventoryForm = ({ item, onClose }) => {
 
 InventoryForm.propTypes = {
   item: PropTypes.object,
+  categories: PropTypes.array,
   onClose: PropTypes.func.isRequired,
 };
 

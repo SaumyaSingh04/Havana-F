@@ -7,6 +7,7 @@ import {
 import { toast } from 'react-hot-toast';
 import InventoryTable from './InventoryTable';
 import InventoryForm from './InventoryForm';
+import InventoryCategoryForm from './InventoryCategoryForm';
 import StockMovementModal from './StockMovementModal';
 import StockMovementLog from './StockMovementLog';
 import Dashboard from './Dashboard';
@@ -23,18 +24,20 @@ const HotelInventory = () => {
   
   // Modal states
   const [showForm, setShowForm] = useState(false);
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showStockModal, setShowStockModal] = useState(false);
   const [showMovementLog, setShowMovementLog] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [stockOperation, setStockOperation] = useState('in');
+  const [categories, setCategories] = useState([]);
 
-  const categories = ['Housekeeping', 'Consumables', 'Kitchen', 'Linen', 'Maintenance'];
   const locations = ['Store Room', 'Kitchen Store', 'Floor Storage', 'Laundry Room', 'Maintenance Room'];
 
   useEffect(() => {
     fetchItems();
     fetchLowStockItems();
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -88,6 +91,28 @@ const HotelInventory = () => {
       }
     } catch (error) {
       console.error('Failed to fetch low stock items');
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/inventory-categories/all`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.filter(cat => cat.isActive).map(cat => cat.name));
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories');
+      // Fallback to static categories if API fails
+      setCategories(['Housekeeping', 'Consumables', 'Kitchen', 'Linen', 'Maintenance']);
     }
   };
 
@@ -228,6 +253,13 @@ const HotelInventory = () => {
           >
             <Download size={20} />
             Export
+          </button>
+          <button
+            onClick={() => setShowCategoryForm(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          >
+            <Plus size={20} />
+            Add Category
           </button>
           <button
             onClick={handleAddItem}
@@ -377,6 +409,7 @@ const HotelInventory = () => {
       {showForm && (
         <InventoryForm
           item={editingItem}
+          categories={categories}
           onClose={handleFormClose}
         />
       )}
@@ -386,6 +419,13 @@ const HotelInventory = () => {
           item={selectedItem}
           operation={stockOperation}
           onClose={handleStockModalClose}
+        />
+      )}
+
+      {showCategoryForm && (
+        <InventoryCategoryForm
+          onClose={() => setShowCategoryForm(false)}
+          onSuccess={fetchCategories}
         />
       )}
 
