@@ -495,10 +495,13 @@ export default function Invoice() {
           }
           .no-print { display: none !important; }
           @page { 
-            margin: 0.5in; 
+            margin: 0.2in; 
             size: A4;
           }
           body { margin: 0; padding: 0; background: white !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          table { border-collapse: collapse !important; }
+          table, th, td { border: 1px solid black !important; }
           .overflow-x-auto { overflow: visible !important; }
           table { page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; }
@@ -528,13 +531,13 @@ export default function Invoice() {
           }
           .items-table {
             width: 100% !important;
-            table-layout: fixed !important;
-            font-size: 7px !important;
+            border-collapse: collapse !important;
+            font-size: 12px !important;
           }
           .items-table th, .items-table td {
-            padding: 1px !important;
-            font-size: 7px !important;
-            word-break: break-word !important;
+            border: 1px solid black !important;
+            padding: 6px !important;
+            font-size: 12px !important;
           }
           .items-table th:nth-child(1), .items-table td:nth-child(1) { width: 10% !important; }
           .items-table th:nth-child(2), .items-table td:nth-child(2) { width: 35% !important; }
@@ -554,13 +557,18 @@ export default function Invoice() {
         }
       `}</style>
       <div className="min-h-screen bg-white p-2 sm:p-4">
-      <div ref={invoiceRef} className="max-w-7xl mx-auto border-2 border-black p-2 sm:p-4 print-content">
+      <div ref={invoiceRef} className="max-w-7xl mx-auto border-2 border-black p-2 sm:p-4 print-content relative" style={{
+        backgroundImage: `url(${ashokaLogo})`,
+        backgroundSize: '40%',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}>
+        <div className="absolute inset-0 bg-white/80 pointer-events-none"></div>
+        <div className="relative z-10">
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-4 space-y-4 lg:space-y-0">
           <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <div className="border border-black p-2">
-              <div className="w-20 h-20 sm:w-24 sm:h-24">
-                <img src={ashokaLogo} alt="Havana Logo" className="w-full h-full object-contain" />
-              </div>
+            <div className="w-20 h-20 sm:w-24 sm:h-24">
+              <img src={ashokaLogo} alt="Havana Logo" className="w-full h-full object-contain" />
             </div>
             <div className="text-xs text-center sm:text-left">
               <p className="font-bold text-sm sm:text-base">HOTEL HAVANA </p>
@@ -583,7 +591,7 @@ export default function Invoice() {
           </div>
         </div>
 
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-2">
           <div className="text-center font-bold text-lg flex-1">
             TAX INVOICE
           </div>
@@ -612,7 +620,7 @@ export default function Invoice() {
           </div>
         </div>
         
-        <div className="client-details-grid grid grid-cols-1 lg:grid-cols-2 text-xs border border-black mb-4">
+        <div className="client-details-grid grid grid-cols-1 lg:grid-cols-2 text-xs border border-black mb-2">
           <div className="client-details-left border-r border-black p-2">
             {(bookingData?.companyGSTIN && bookingData.companyGSTIN.trim() !== '') && (
               <p><span className="font-bold">GSTIN No. : </span>
@@ -1064,6 +1072,7 @@ export default function Invoice() {
             <div></div>
           </div>
           <p className="mt-4 text-center text-lg font-bold">Thank You, Visit Again</p>
+        </div>
         </div>
       </div>
     </div>
