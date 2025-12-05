@@ -48,6 +48,7 @@ import GSTSettings from './components/restaurant/GSTSettings';
 import RestaurantInvoice from './components/restaurant/RestaurantInvoice';
 import SharedHotelInvoice from './components/booking/SharedHotelInvoice';
 import NightAuditReport from './components/reports/NightAuditReport';
+import CashManagement from './components/CashManagement/CashManagement';
 
 import './App.css'
 
@@ -121,6 +122,13 @@ function App() {
             <Route path="inventory" element={
               <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
                 <HotelInventory />
+              </PrivateRoute>
+            } />
+            
+            {/* Cash Management Routes */}
+            <Route path="cash-management" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'FRONT DESK']}>
+                <CashManagement />
               </PrivateRoute>
             } />
             
