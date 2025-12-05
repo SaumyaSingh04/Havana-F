@@ -47,6 +47,7 @@ import KOT from './components/restaurant/KOT';
 import GSTSettings from './components/restaurant/GSTSettings';
 import RestaurantInvoice from './components/restaurant/RestaurantInvoice';
 import SharedHotelInvoice from './components/booking/SharedHotelInvoice';
+import NightAuditReport from './components/reports/NightAuditReport';
 
 import './App.css'
 
@@ -225,6 +226,13 @@ function App() {
             <Route path="restaurant/invoice/:orderId" element={
               <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
                 <RestaurantInvoice />
+              </PrivateRoute>
+            } />
+            
+            {/* Reports Routes */}
+            <Route path="night-audit-report" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <NightAuditReport />
               </PrivateRoute>
             } />
             

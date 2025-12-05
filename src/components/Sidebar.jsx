@@ -170,6 +170,11 @@ const Sidebar = () => {
       });
     }
 
+    // Reports - Admin, GM, Front Desk
+    if (hasRole(['ADMIN', 'GM', 'FRONT DESK'])) {
+      items.push({ icon: FileText, label: "Night Audit Report", path: "/night-audit-report" });
+    }
+
     // Users - Admin only
     if (hasRole('ADMIN')) {
       items.push({ icon: Users, label: "All Users", path: "/users" });
