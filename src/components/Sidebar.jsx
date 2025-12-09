@@ -28,6 +28,8 @@ import {
   IndianRupee,
   Shirt,
   Building2,
+  AlertTriangle,
+  Tag,
 } from "lucide-react";
 import logoImage from "../assets/hawana golden png.png";
 
@@ -128,12 +130,19 @@ const Sidebar = () => {
 
     // Laundry - Admin, GM, Front Desk
     if (hasRole(['ADMIN', 'GM', 'FRONT DESK'])) {
-      items.push({ icon: Shirt, label: "Laundry", path: "/laundry" });
-    }
-
-    // Vendors - Admin, GM
-    if (hasRole(['ADMIN', 'GM'])) {
-      items.push({ icon: Building2, label: "Vendors", path: "/vendors" });
+      items.push({
+        icon: Shirt,
+        label: "Laundry",
+        path: "/laundry",
+        isDropdown: true,
+        children: [
+          { label: "Orders", path: "/laundry/orders", icon: ClipboardList },
+          { label: "Categories", path: "/laundry/categories", icon: Tag },
+          { label: "Laundry Items", path: "/laundry/items", icon: Shirt },
+          { label: "Loss Reports", path: "/laundry/loss-reports", icon: AlertTriangle },
+          { label: "Vendors", path: "/vendors", icon: Building2 },
+        ],
+      });
     }
 
     // Cash Management - Admin, Front Desk

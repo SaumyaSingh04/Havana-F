@@ -133,14 +133,15 @@ const VendorManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Building2 className="text-blue-600" />
+            <Building2 style={{color: 'hsl(45, 43%, 58%)'}} />
             Vendor Management
           </h1>
           <p className="text-gray-600 mt-1">Manage all vendors and suppliers</p>
         </div>
         <button
           onClick={() => { resetForm(); setShowForm(true); }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          className="text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          style={{background: 'linear-gradient(to bottom, hsl(45, 43%, 58%), hsl(45, 32%, 46%))', border: '1px solid hsl(45, 43%, 58%)'}}
         >
           <Plus size={20} />
           Add Vendor
@@ -155,7 +156,8 @@ const VendorManagement = () => {
             placeholder="Search vendors..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2"
+            style={{focusRing: 'hsl(45, 43%, 58%)'}}
           />
         </div>
       </div>
@@ -188,7 +190,7 @@ const VendorManagement = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button onClick={() => handleEdit(vendor)} className="text-blue-600 hover:text-blue-800 mr-3">
+                    <button onClick={() => handleEdit(vendor)} style={{color: 'hsl(45, 43%, 58%)'}} className="mr-3">
                       <Edit size={18} />
                     </button>
                     <button onClick={() => handleDelete(vendor._id)} className="text-red-600 hover:text-red-800">
@@ -305,7 +307,8 @@ const VendorManagement = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 text-white rounded-lg"
+                  style={{background: 'linear-gradient(to bottom, hsl(45, 43%, 58%), hsl(45, 32%, 46%))'}}
                 >
                   {editingVendor ? 'Update' : 'Add'} Vendor
                 </button>

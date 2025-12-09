@@ -49,7 +49,11 @@ import RestaurantInvoice from './components/restaurant/RestaurantInvoice';
 import SharedHotelInvoice from './components/booking/SharedHotelInvoice';
 import NightAuditReport from './components/reports/NightAuditReport';
 import CashManagement from './components/CashManagement/CashManagement';
-import LaundryManagement from './components/Laundry/LaundryManagement';
+import LaundryOrders from './components/Laundry/LaundryOrders';
+import CreateLaundryOrder from './components/Laundry/CreateLaundryOrder';
+import LaundryItems from './components/Laundry/LaundryItems';
+import LaundryCategories from './components/Laundry/LaundryCategories';
+import LossReports from './components/Laundry/LossReports';
 import VendorManagement from './components/Vendor/VendorManagement';
 
 import './App.css'
@@ -128,9 +132,29 @@ function App() {
             } />
             
             {/* Laundry Routes */}
-            <Route path="laundry" element={
+            <Route path="laundry/orders" element={
               <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
-                <LaundryManagement />
+                <LaundryOrders />
+              </PrivateRoute>
+            } />
+            <Route path="laundry/orders/create" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <CreateLaundryOrder />
+              </PrivateRoute>
+            } />
+            <Route path="laundry/categories" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <LaundryCategories />
+              </PrivateRoute>
+            } />
+            <Route path="laundry/items" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <LaundryItems />
+              </PrivateRoute>
+            } />
+            <Route path="laundry/loss-reports" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <LossReports />
               </PrivateRoute>
             } />
             
