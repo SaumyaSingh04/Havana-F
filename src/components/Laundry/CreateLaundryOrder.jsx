@@ -200,7 +200,7 @@ const CreateLaundryOrder = () => {
                     <label className="block text-sm font-medium mb-1">Item *</label>
                     <select value={item.rateId} onChange={(e) => updateItem(index, 'rateId', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" required>
                       <option value="">Select Item</option>
-                      {laundryItems.map(li => <option key={li._id} value={li._id}>{li.itemName} - ₹{li.rate}</option>)}
+                      {laundryItems.filter(li => formData.serviceType === 'vendor' ? li.vendorId : !li.vendorId).map(li => <option key={li._id} value={li._id}>{li.itemName} - ₹{li.rate}</option>)}
                     </select>
                   </div>
                   <div>
