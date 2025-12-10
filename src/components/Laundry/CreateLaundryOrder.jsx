@@ -16,14 +16,7 @@ const CreateLaundryOrder = () => {
     requestedByName: '',
     serviceType: 'inhouse',
     vendorId: '',
-    items: [],
-    isUrgent: false,
-    urgencyNote: '',
-    specialInstructions: '',
-    scheduledPickupTime: '',
-    scheduledDeliveryTime: '',
-    isBillable: true,
-    isComplimentary: false
+    items: []
   });
 
   useEffect(() => {
@@ -74,7 +67,7 @@ const CreateLaundryOrder = () => {
   const addItem = () => {
     setFormData({
       ...formData,
-      items: [...formData.items, { rateId: '', quantity: 1, serviceType: '', damageReported: false, itemNotes: '' }]
+      items: [...formData.items, { rateId: '', quantity: 1, serviceType: '' }]
     });
   };
 
@@ -102,7 +95,7 @@ const CreateLaundryOrder = () => {
         delete payload.vendorId;
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/laundry/orders`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/laundry/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,7 +188,7 @@ const CreateLaundryOrder = () => {
           <div className="space-y-3">
             {formData.items.map((item, index) => (
               <div key={index} className="border rounded-lg p-3">
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium mb-1">Item *</label>
                     <select value={item.rateId} onChange={(e) => updateItem(index, 'rateId', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" required>
@@ -203,9 +196,10 @@ const CreateLaundryOrder = () => {
                       {laundryItems.filter(li => formData.serviceType === 'vendor' ? li.vendorId : !li.vendorId).map(li => <option key={li._id} value={li._id}>{li.itemName} - ₹{li.rate}</option>)}
                     </select>
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium mb-1">Service *</label>
-                    <input type="text" value={item.serviceType} onChange={(e) => updateItem(index, 'serviceType', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. Wash, Dry Clean, Press" required />
+                    <label className="block text-sm font-medium mb-1">Service Type *</label>
+                    <input type="text" value={item.serviceType} onChange={(e) => updateItem(index, 'serviceType', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. Wash, Iron" required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Quantity *</label>
@@ -217,63 +211,13 @@ const CreateLaundryOrder = () => {
                     </button>
                   </div>
                 </div>
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="flex items-center text-sm">
-                      <input type="checkbox" checked={item.damageReported} onChange={(e) => updateItem(index, 'damageReported', e.target.checked)} className="mr-2" />
-                      Damage Reported
-                    </label>
-                  </div>
-                  <div>
-                    <input type="text" placeholder="Item notes" value={item.itemNotes} onChange={(e) => updateItem(index, 'itemNotes', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
-                  </div>
-                </div>
+
               </div>
             ))}
           </div>
         </div>
 
-        {/* Additional Details */}
-        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-          <h2 className="text-lg font-semibold mb-4">Additional Details</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="flex items-center text-sm font-medium">
-                <input type="checkbox" checked={formData.isUrgent} onChange={(e) => setFormData({...formData, isUrgent: e.target.checked})} className="mr-2" />
-                Urgent Order
-              </label>
-            </div>
-            {formData.isUrgent && (
-              <div>
-                <input type="text" placeholder="Urgency note" value={formData.urgencyNote} onChange={(e) => setFormData({...formData, urgencyNote: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
-              </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium mb-1">Scheduled Pickup</label>
-              <input type="datetime-local" value={formData.scheduledPickupTime} onChange={(e) => setFormData({...formData, scheduledPickupTime: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Scheduled Delivery</label>
-              <input type="datetime-local" value={formData.scheduledDeliveryTime} onChange={(e) => setFormData({...formData, scheduledDeliveryTime: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium mb-1">Special Instructions</label>
-              <textarea value={formData.specialInstructions} onChange={(e) => setFormData({...formData, specialInstructions: e.target.value})} className="w-full px-3 py-2 border rounded-lg" rows="2" />
-            </div>
-            <div>
-              <label className="flex items-center text-sm font-medium">
-                <input type="checkbox" checked={formData.isComplimentary} onChange={(e) => setFormData({...formData, isComplimentary: e.target.checked})} className="mr-2" />
-                Complimentary
-              </label>
-            </div>
-            <div>
-              <label className="flex items-center text-sm font-medium">
-                <input type="checkbox" checked={formData.isBillable} onChange={(e) => setFormData({...formData, isBillable: e.target.checked})} className="mr-2" />
-                Billable
-              </label>
-            </div>
-          </div>
-        </div>
+
 
         {/* Submit */}
         <div className="flex gap-3">

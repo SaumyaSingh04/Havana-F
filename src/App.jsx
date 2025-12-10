@@ -51,6 +51,8 @@ import NightAuditReport from './components/reports/NightAuditReport';
 import CashManagement from './components/CashManagement/CashManagement';
 import LaundryOrders from './components/Laundry/LaundryOrders';
 import CreateLaundryOrder from './components/Laundry/CreateLaundryOrder';
+import LaundryOrderView from './components/Laundry/LaundryOrderView';
+import LaundryOrderEdit from './components/Laundry/LaundryOrderEdit';
 import LaundryItems from './components/Laundry/LaundryItems';
 import LaundryCategories from './components/Laundry/LaundryCategories';
 import LossReports from './components/Laundry/LossReports';
@@ -140,6 +142,16 @@ function App() {
             <Route path="laundry/orders/create" element={
               <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
                 <CreateLaundryOrder />
+              </PrivateRoute>
+            } />
+            <Route path="laundry/orders/view/:id" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <LaundryOrderView />
+              </PrivateRoute>
+            } />
+            <Route path="laundry/orders/edit/:id" element={
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+                <LaundryOrderEdit />
               </PrivateRoute>
             } />
             <Route path="laundry/categories" element={

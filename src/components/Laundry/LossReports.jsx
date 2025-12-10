@@ -17,11 +17,12 @@ const LossReports = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/laundry/loss-reports`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/laundry/loss-report`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      setLossReports(data.reports || []);
+      console.log('Loss reports response:', data);
+      setLossReports(Array.isArray(data) ? data : (data.reports || data.data || data.lossReports || []));
     } catch (error) {
       console.error('Error fetching loss reports:', error);
       toast.error('Failed to fetch loss reports');
@@ -41,9 +42,9 @@ const LossReports = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/laundry/loss-reports/${reportId}/status`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/laundry/loss-report/${reportId}/status`,
         {
-          method: 'PUT',
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
