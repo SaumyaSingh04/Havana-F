@@ -215,6 +215,8 @@ const BookingPage = () => {
 
 
 
+
+
   if (isInitialLoading) {
     return <DashboardLoader pageName="Bookings" />;
   }
