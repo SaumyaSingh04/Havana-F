@@ -94,6 +94,14 @@ const Sidebar = () => {
 
 
   const getNavItems = () => {
+    // For ACCOUNTS role - only Dashboard and Night Audit Report
+    if (hasRole('ACCOUNTS') && !hasRole(['ADMIN', 'GM', 'FRONT DESK'])) {
+      return [
+        { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+        { icon: FileText, label: "Night Audit Report", path: "/night-audit-report" },
+      ];
+    }
+
     const items = [
       // Dashboard - All roles
       { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
