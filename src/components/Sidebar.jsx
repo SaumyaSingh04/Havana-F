@@ -151,8 +151,8 @@ const Sidebar = () => {
       items.push({ icon: Sparkles, label: "Housekeeping", path: "/housekeeping" });
     }
 
-    // Cash Management - Admin, Front Desk
-    if (hasRole(['ADMIN', 'FRONT DESK'])) {
+    // Cash Management - Admin, Front Desk, Accounts
+    if (hasRole(['ADMIN', 'FRONT DESK', 'ACCOUNTS'])) {
       items.push({ icon: IndianRupee, label: "Cash Management", path: "/cash-management" });
     }
 
@@ -203,8 +203,8 @@ const Sidebar = () => {
       });
     }
 
-    // Reports - Admin, GM, Front Desk
-    if (hasRole(['ADMIN', 'GM', 'FRONT DESK'])) {
+    // Reports - Admin, GM, Front Desk, Accounts
+    if (hasRole(['ADMIN', 'GM', 'FRONT DESK', 'ACCOUNTS'])) {
       items.push({ icon: FileText, label: "Night Audit Report", path: "/night-audit-report" });
     }
 

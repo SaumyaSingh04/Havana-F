@@ -105,6 +105,8 @@ const Dashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [dashboardStats, setDashboardStats] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
 
   const [dashboardCards, setDashboardCards] = useState([]);
@@ -384,11 +386,44 @@ const Dashboard = () => {
   const toggleCard = (cardId) => {
     const newActiveCard = activeCard === cardId ? null : cardId;
     setActiveCard(newActiveCard);
+    setCurrentPage(1); // Reset to first page when switching cards
     if (newActiveCard) {
       localStorage.setItem("activeCard", newActiveCard);
     } else {
       localStorage.removeItem("activeCard");
     }
+  };
+
+  const Pagination = ({ currentPage, totalItems, itemsPerPage, onPageChange }) => {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex justify-between items-center mt-4 px-4 py-2 bg-gray-50 rounded">
+        <span className="text-sm text-gray-600">
+          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
+        </span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+          >
+            Previous
+          </button>
+          <span className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded">
+            {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
   };
 
   const getIcon = (iconName) => {
@@ -464,7 +499,7 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredBookings.slice(0, 10).map((booking, index) => (
+                  {filteredBookings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((booking, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm">{booking.grcNo}</td>
                       <td className="px-4 py-2 text-sm">{booking.name}</td>
@@ -485,9 +520,12 @@ const Dashboard = () => {
                   ))}
                 </tbody>
               </table>
-              {filteredBookings.length > 10 && (
-                <p className="text-sm text-gray-500 mt-2">Showing first 10 of {filteredBookings.length} bookings</p>
-              )}
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={filteredBookings.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         );
@@ -508,7 +546,7 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {activeBookings.map((booking, index) => (
+                  {activeBookings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((booking, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm">{booking.grcNo}</td>
                       <td className="px-4 py-2 text-sm">{booking.name}</td>
@@ -519,6 +557,12 @@ const Dashboard = () => {
                   ))}
                 </tbody>
               </table>
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={activeBookings.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         );
@@ -539,7 +583,7 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {cancelledBookings.map((booking, index) => (
+                  {cancelledBookings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((booking, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm">{booking.grcNo}</td>
                       <td className="px-4 py-2 text-sm">{booking.name}</td>
@@ -550,6 +594,12 @@ const Dashboard = () => {
                   ))}
                 </tbody>
               </table>
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={cancelledBookings.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         );
@@ -570,7 +620,7 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredBookings.slice(0, 10).map((booking, index) => {
+                  {filteredBookings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((booking, index) => {
                     const total = (booking.rate || 0) + (booking.cgstAmount || 0) + (booking.sgstAmount || 0);
                     return (
                       <tr key={index} className="hover:bg-gray-50">
@@ -585,6 +635,12 @@ const Dashboard = () => {
                   })}
                 </tbody>
               </table>
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={filteredBookings.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         );
@@ -605,7 +661,7 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {onlinePayments.map((booking, index) => (
+                  {onlinePayments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((booking, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm">{booking.grcNo}</td>
                       <td className="px-4 py-2 text-sm">{booking.name}</td>
@@ -616,6 +672,12 @@ const Dashboard = () => {
                   ))}
                 </tbody>
               </table>
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={onlinePayments.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         );
@@ -636,7 +698,7 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {cashPayments.map((booking, index) => (
+                  {cashPayments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((booking, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm">{booking.grcNo}</td>
                       <td className="px-4 py-2 text-sm">{booking.name}</td>
@@ -647,6 +709,12 @@ const Dashboard = () => {
                   ))}
                 </tbody>
               </table>
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={cashPayments.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         );
@@ -677,7 +745,7 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {allServiceData.restaurant?.slice(0, 10).map((order, index) => (
+                  {allServiceData.restaurant?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((order, index) => (
                     <Fragment key={index}>
                       <tr className="hover:bg-gray-50">
                         <td className="px-4 py-2 text-sm">{order._id?.slice(-6) || index + 1}</td>
@@ -733,9 +801,12 @@ const Dashboard = () => {
                   ))}
                 </tbody>
               </table>
-              {allServiceData.restaurant?.length > 10 && (
-                <p className="text-sm text-gray-500 mt-2">Showing first 10 of {allServiceData.restaurant.length} orders</p>
-              )}
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={allServiceData.restaurant?.length || 0}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         );
@@ -758,7 +829,7 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {allServiceData.laundry?.slice(0, 10).map((order, index) => (
+                  {allServiceData.laundry?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((order, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm">{order._id?.slice(-6) || index + 1}</td>
                       <td className="px-4 py-2 text-sm">{order.roomNumber || 'N/A'}</td>
@@ -782,9 +853,12 @@ const Dashboard = () => {
                   ))}
                 </tbody>
               </table>
-              {allServiceData.laundry?.length > 10 && (
-                <p className="text-sm text-gray-500 mt-2">Showing first 10 of {allServiceData.laundry.length} orders</p>
-              )}
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={allServiceData.laundry?.length || 0}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         );
@@ -904,25 +978,13 @@ const Dashboard = () => {
                   <div className={`p-2 rounded-lg ${card.color} text-white`}>
                     <IconComponent className="w-5 h-5" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        exportCSV(card.id);
-                      }}
-                      className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition-colors"
-                      title="Export CSV"
-                    >
-                      Export CSV
-                    </button>
-                    <span
-                      className={`text-xs font-medium ${
-                        card.trendUp ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {card.trend}
-                    </span>
-                  </div>
+                  <span
+                    className={`text-xs font-medium ${
+                      card.trendUp ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {card.trend}
+                  </span>
                 </div>
                 <h3 className="text-sm text-text/70">{card.title}</h3>
                 <p className="text-2xl font-bold text-[#1f2937]">
@@ -945,6 +1007,13 @@ const Dashboard = () => {
             <h2 className="text-lg sm:text-xl font-extrabold text-[#1f2937]">
               {dashboardCards.find((c) => c.id === activeCard)?.title} Details
             </h2>
+            <button
+              onClick={() => exportCSV(activeCard)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export Data
+            </button>
           </div>
           {renderCardDetail()}
         </div>
