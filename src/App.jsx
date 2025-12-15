@@ -188,7 +188,7 @@ function App() {
             
             {/* Cash Management Routes */}
             <Route path="cash-management" element={
-              <PrivateRoute requiredRoles={['ADMIN', 'FRONT DESK']}>
+              <PrivateRoute requiredRoles={['ADMIN', 'FRONT DESK', 'ACCOUNTS']}>
                 <CashManagement />
               </PrivateRoute>
             } />
@@ -315,7 +315,7 @@ function App() {
             
             {/* Reports Routes */}
             <Route path="night-audit-report" element={
-              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK']}>
+              <PrivateRoute requiredRoles={['ADMIN', 'GM', 'FRONT DESK', 'ACCOUNTS']}>
                 <NightAuditReport />
               </PrivateRoute>
             } />
