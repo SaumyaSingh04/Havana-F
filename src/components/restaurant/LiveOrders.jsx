@@ -196,10 +196,12 @@ const LiveOrders = () => {
     };
     loadInitialData();
     
-    // Set up more frequent refresh (every 10 seconds) to ensure cancelled orders are removed quickly
+    // Set up less frequent refresh (every 30 seconds) and only if no socket connection
     const interval = setInterval(() => {
-      fetchOrders();
-    }, 10000);
+      if (!isConnected) {
+        fetchOrders();
+      }
+    }, 30000);
     
     return () => clearInterval(interval);
   }, []);

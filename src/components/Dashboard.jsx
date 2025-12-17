@@ -260,6 +260,16 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
     
+    // Check cache first
+    const cacheKey = 'serviceData';
+    const cached = sessionStorage.getItem(cacheKey);
+    const cacheTime = sessionStorage.getItem(cacheKey + '_time');
+    
+    if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 60000) { // 1 minute cache
+      setAllServiceData(JSON.parse(cached));
+      return;
+    }
+    
     try {
       const [laundryRes, restaurantRes, pantryRes, banquetRes, reservationRes] = await Promise.allSettled([
         axios.get("/api/laundry/all", { headers }),
@@ -275,13 +285,19 @@ const Dashboard = () => {
       
 
       
-      setAllServiceData({
+      const serviceData = {
         laundry: laundryRes.status === 'fulfilled' ? (Array.isArray(laundryRes.value.data) ? laundryRes.value.data : laundryRes.value.data.laundry || []) : [],
         restaurant: restaurantRes.status === 'fulfilled' ? (Array.isArray(restaurantRes.value.data) ? restaurantRes.value.data : restaurantRes.value.data.restaurant || []) : [],
         pantry: pantryRes.status === 'fulfilled' ? (Array.isArray(pantryRes.value.data) ? pantryRes.value.data : pantryRes.value.data.pantry || []) : [],
         banquet: banquetData,
         reservations: reservationData
-      });
+      };
+      
+      setAllServiceData(serviceData);
+      
+      // Cache the data
+      sessionStorage.setItem(cacheKey, JSON.stringify(serviceData));
+      sessionStorage.setItem(cacheKey + '_time', Date.now().toString());
     } catch (error) {
       console.error('Service APIs Error:', error);
     }
@@ -416,11 +432,15 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (timeFrame === 'range' && startDate && endDate) {
-      fetchDashboardStats(timeFrame, startDate, endDate);
-    } else if (timeFrame !== 'range') {
-      fetchDashboardStats(timeFrame);
-    }
+    const timeoutId = setTimeout(() => {
+      if (timeFrame === 'range' && startDate && endDate) {
+        fetchDashboardStats(timeFrame, startDate, endDate);
+      } else if (timeFrame !== 'range') {
+        fetchDashboardStats(timeFrame);
+      }
+    }, 300); // Debounce API calls
+    
+    return () => clearTimeout(timeoutId);
   }, [timeFrame, startDate, endDate]);
 
   useEffect(() => {

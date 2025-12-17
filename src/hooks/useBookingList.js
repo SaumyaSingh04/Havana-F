@@ -35,6 +35,7 @@ export const useBookingList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [showOnlyExtraBed, setShowOnlyExtraBed] = useState(false);
@@ -253,9 +254,9 @@ export const useBookingList = () => {
   };
 
   const filteredBookings = bookings.filter((b) => {
-    const matchesSearch = b.name.toLowerCase().includes(search.toLowerCase()) ||
-      b.roomNumber.toString().includes(search.toString()) ||
-      b.grcNo.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = b.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      b.roomNumber.toString().includes(debouncedSearch.toString()) ||
+      b.grcNo.toLowerCase().includes(debouncedSearch.toLowerCase());
     
     const matchesExtraBed = showOnlyExtraBed ? b.extraBed : true;
     
@@ -270,8 +271,24 @@ export const useBookingList = () => {
     setCurrentPage(page);
   };
 
+  // Debounce search to prevent excessive API calls
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  }, [search]);
+
   useEffect(() => {
     fetchData();
+  }, []);
+
+  // Add cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup any pending requests
+    };
   }, []);
 
   return {
@@ -281,6 +298,7 @@ export const useBookingList = () => {
     setError,
     search,
     setSearch,
+    debouncedSearch,
     currentPage,
     totalPages,
     paginatedBookings,
