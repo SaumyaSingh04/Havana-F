@@ -158,10 +158,7 @@ const Sidebar = () => {
       });
     }
 
-    // Housekeeping - Admin, GM, Housekeeping, Front Desk
-    if (hasRole(['ADMIN', 'GM', 'HOUSEKEEPING', 'FRONT DESK'])) {
-      items.push({ icon: Sparkles, label: "Housekeeping", path: "/housekeeping" });
-    }
+
 
     // Cash Management - Admin, Front Desk, Accounts
     if (hasRole(['ADMIN', 'FRONT DESK', 'ACCOUNTS'])) {
@@ -200,20 +197,7 @@ const Sidebar = () => {
       });
     }
 
-    // Banquet - Admin, GM
-    if (hasRole(['ADMIN', 'GM'])) {
-      items.push({
-        icon: UserRound,
-        label: "Banquet",
-        path: "/banquet",
-        isDropdown: true,
-        children: [
-          { label: "Calendar", path: "/banquet/calendar", icon: FileText },
-          { label: "List Bookings", path: "/banquet/list-booking", icon: Package },
-          { label: "Menu & Plans", path: "/banquet/menu-plan-manager", icon: Settings },
-        ],
-      });
-    }
+
 
     // Reports - Admin, GM, Front Desk, Accounts
     if (hasRole(['ADMIN', 'GM', 'FRONT DESK', 'ACCOUNTS'])) {
