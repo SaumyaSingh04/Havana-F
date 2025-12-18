@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment } from "react";
+import React, { useState, useEffect, Fragment, useMemo, useCallback } from "react";
 import { FaIndianRupeeSign } from "react-icons/fa6";
 import { SlCalender } from "react-icons/sl";
 import {
@@ -17,7 +17,9 @@ import {
 import { useAppContext } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import BookingCalendar from "./BookingCalendar";
+
+// Lazy load heavy components
+const BookingCalendar = React.lazy(() => import("./BookingCalendar"));
 
 
 import DashboardLoader from "./DashboardLoader";
@@ -191,7 +193,7 @@ const Dashboard = () => {
   const itemsPerPage = 10;
 
 
-  const [dashboardCards, setDashboardCards] = useState([]);
+
   const [allServiceData, setAllServiceData] = useState({
     laundry: [],
     restaurant: [],
@@ -256,7 +258,7 @@ const Dashboard = () => {
 
 
 
-  const fetchAllServiceData = async () => {
+  const fetchAllServiceData = useCallback(async () => {
     const token = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
     
@@ -265,32 +267,24 @@ const Dashboard = () => {
     const cached = sessionStorage.getItem(cacheKey);
     const cacheTime = sessionStorage.getItem(cacheKey + '_time');
     
-    if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 60000) { // 1 minute cache
+    if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 300000) { // 5 minute cache
       setAllServiceData(JSON.parse(cached));
       return;
     }
     
     try {
-      const [laundryRes, restaurantRes, pantryRes, banquetRes, reservationRes] = await Promise.allSettled([
+      // Only fetch essential data first
+      const [laundryRes, restaurantRes] = await Promise.allSettled([
         axios.get("/api/laundry/all", { headers }),
-        axios.get("/api/restaurant-orders/all", { headers }),
-        axios.get("/api/pantry/all", { headers }),
-        axios.get("/api/banquet-bookings", { headers }),
-        axios.get("/api/restaurant-reservations/all", { headers })
+        axios.get("/api/restaurant-orders/all", { headers })
       ]);
-
-      const banquetData = banquetRes.status === 'fulfilled' ? (Array.isArray(banquetRes.value.data) ? banquetRes.value.data : banquetRes.value.data.banquet || banquetRes.value.data.bookings || []) : [];
-      
-      const reservationData = reservationRes.status === 'fulfilled' ? (Array.isArray(reservationRes.value.data) ? reservationRes.value.data : reservationRes.value.data.orders || reservationRes.value.data.reservations || []) : [];
-      
-
       
       const serviceData = {
         laundry: laundryRes.status === 'fulfilled' ? (Array.isArray(laundryRes.value.data) ? laundryRes.value.data : laundryRes.value.data.laundry || []) : [],
         restaurant: restaurantRes.status === 'fulfilled' ? (Array.isArray(restaurantRes.value.data) ? restaurantRes.value.data : restaurantRes.value.data.restaurant || []) : [],
-        pantry: pantryRes.status === 'fulfilled' ? (Array.isArray(pantryRes.value.data) ? pantryRes.value.data : pantryRes.value.data.pantry || []) : [],
-        banquet: banquetData,
-        reservations: reservationData
+        pantry: [],
+        banquet: [],
+        reservations: []
       };
       
       setAllServiceData(serviceData);
@@ -301,9 +295,9 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Service APIs Error:', error);
     }
-  };
+  }, [axios]);
 
-  const calculateTrends = () => {
+  const calculateTrends = useMemo(() => {
     const now = new Date();
     const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     
@@ -334,13 +328,12 @@ const Dashboard = () => {
     const bookingsTrend = previousWeekBookings.length > 0 ? ((currentWeekBookings.length - previousWeekBookings.length) / previousWeekBookings.length * 100) : 0;
     
     return { revenueTrend, bookingsTrend };
-  };
+  }, [bookings]);
 
-  const updateDashboardCards = () => {
-    const availableRooms = rooms.filter(room => room.status === 'available').length;
-    const { revenueTrend, bookingsTrend } = calculateTrends();
+  const dashboardCards = useMemo(() => {
+    const { revenueTrend, bookingsTrend } = calculateTrends;
     
-    const cards = [
+    return [
       {
         id: "bookings",
         title: "Total Bookings",
@@ -414,22 +407,35 @@ const Dashboard = () => {
         trendUp: true,
       },
     ];
-    setDashboardCards(cards);
-  };
+  }, [dashboardStats, bookings, allServiceData, calculateTrends]);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      await Promise.all([
-        fetchRooms(), 
-        fetchBookings(), 
-        fetchAllServiceData(),
-        fetchDashboardStats(timeFrame)
-      ]);
-      setLoading(false);
+      try {
+        // Only fetch dashboard stats initially for fastest load
+        await fetchDashboardStats(timeFrame);
+        setLoading(false);
+        
+        // Fetch other data in background after UI renders
+        setTimeout(async () => {
+          await Promise.all([
+            fetchRooms(),
+            fetchBookings()
+          ]);
+          
+          // Fetch service data last (only when needed)
+          if (activeCard === 'restaurant' || activeCard === 'laundry') {
+            await fetchAllServiceData();
+          }
+        }, 100);
+      } catch (error) {
+        console.error('Dashboard fetch error:', error);
+        setLoading(false);
+      }
     };
     fetchData();
-  }, []);
+  }, [fetchAllServiceData, timeFrame]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -443,11 +449,9 @@ const Dashboard = () => {
     return () => clearTimeout(timeoutId);
   }, [timeFrame, startDate, endDate]);
 
-  useEffect(() => {
-    updateDashboardCards();
-  }, [rooms, bookings, dashboardStats]);
 
-  const getRoomCategories = () => {
+
+  const roomCategories = useMemo(() => {
     const categories = {};
     rooms.forEach(room => {
       // Handle category as object or string
@@ -483,14 +487,21 @@ const Dashboard = () => {
       }
     });
     return categories;
-  };
+  }, [rooms]);
 
   const toggleCard = (cardId) => {
     const newActiveCard = activeCard === cardId ? null : cardId;
     setActiveCard(newActiveCard);
-    setCurrentPage(1); // Reset to first page when switching cards
+    setCurrentPage(1);
+    
     if (newActiveCard) {
       localStorage.setItem("activeCard", newActiveCard);
+      
+      // Fetch service data only when restaurant/laundry cards are clicked
+      if ((newActiveCard === 'restaurant' || newActiveCard === 'laundry') && 
+          (!allServiceData.restaurant.length && !allServiceData.laundry.length)) {
+        fetchAllServiceData();
+      }
     } else {
       localStorage.removeItem("activeCard");
     }
@@ -526,6 +537,38 @@ const Dashboard = () => {
         </div>
       </div>
     );
+  };
+
+  const CounterAnimation = ({ value, duration = 1000 }) => {
+    const [count, setCount] = useState(0);
+    
+    useEffect(() => {
+      const numericValue = parseInt(value.replace(/[^0-9]/g, '')) || 0;
+      if (numericValue === 0) {
+        setCount(0);
+        return;
+      }
+      
+      const increment = numericValue / (duration / 16);
+      let current = 0;
+      
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= numericValue) {
+          setCount(numericValue);
+          clearInterval(timer);
+        } else {
+          setCount(Math.floor(current));
+        }
+      }, 16);
+      
+      return () => clearInterval(timer);
+    }, [value, duration]);
+    
+    if (value.includes('₹')) {
+      return `₹${count.toLocaleString()}`;
+    }
+    return count.toString();
   };
 
   const getIcon = (iconName) => {
@@ -1063,45 +1106,55 @@ const Dashboard = () => {
       </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        {dashboardCards.map((card, index) => {
-          const IconComponent = getIcon(card.icon);
-          return (
-            <div
-              key={card.id}
-              className={`bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 animate-fadeInUp ${
-                activeCard === card.id
-                  ? "ring-2 ring-red-500"
-                  : "hover:shadow-lg"
-              }`}
-              style={{animationDelay: `${Math.min((index + 2) * 100, 600)}ms`}}
-              onClick={() => toggleCard(card.id)}
-            >
-              <div className="p-4 cursor-pointer">
+        {dashboardCards.length === 0 ? (
+          // Skeleton loading for cards
+          Array.from({length: 8}).map((_, index) => (
+            <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+              <div className="p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <div className={`p-2 rounded-lg ${card.color} text-white`}>
-                    <IconComponent className="w-5 h-5" />
-                  </div>
-                  <span
-                    className={`text-xs font-medium ${
-                      card.trendUp ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {card.trend}
-                  </span>
+                  <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
+                  <div className="w-8 h-4 bg-gray-200 rounded"></div>
                 </div>
-                <h3 className="text-sm text-text/70">{card.title}</h3>
-                <p className="text-2xl font-bold text-[#1f2937]">
-                  {card.value}
-                </p>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-8 bg-gray-300 rounded"></div>
               </div>
-              <div
-                className={`h-1 ${
-                  activeCard === card.id ? "bg-red-500" : card.color
-                }`}
-              ></div>
+              <div className="h-1 bg-gray-200"></div>
             </div>
-          );
-        })}
+          ))
+        ) : (
+          dashboardCards.map((card, index) => {
+            const IconComponent = getIcon(card.icon);
+            return (
+              <div
+                key={card.id}
+                className={`bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 animate-fadeInUp ${
+                  activeCard === card.id
+                    ? "ring-2 ring-red-500"
+                    : "hover:shadow-lg"
+                }`}
+                style={{animationDelay: `${Math.min((index + 2) * 100, 600)}ms`}}
+                onClick={() => toggleCard(card.id)}
+              >
+                <div className="p-4 cursor-pointer">
+                  <div className="flex justify-between items-center mb-2">
+                    <div className={`p-2 rounded-lg ${card.color} text-white`}>
+                      <IconComponent className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <h3 className="text-sm text-text/70">{card.title}</h3>
+                  <p className="text-2xl font-bold text-[#1f2937]">
+                    <CounterAnimation value={card.value} duration={1200} />
+                  </p>
+                </div>
+                <div
+                  className={`h-1 ${
+                    activeCard === card.id ? "bg-red-500" : card.color
+                  }`}
+                ></div>
+              </div>
+            );
+          })
+        )}
       </div>
       {/* Detail Section */}
       {activeCard && (
@@ -1129,11 +1182,22 @@ const Dashboard = () => {
           <h2 className="text-lg sm:text-xl font-extrabold text-[#1f2937] mb-4">
             Room Categories & Availability
           </h2>
-          {loading ? (
-            <p className="text-gray-600">Loading rooms...</p>
+          {rooms.length === 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="bg-gray-50 rounded-lg p-4 border border-gray-200 animate-pulse">
+                  <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-gray-200 rounded"></div>
+                    <div className="h-3 bg-gray-200 rounded"></div>
+                    <div className="h-3 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {Object.entries(getRoomCategories()).map(([category, data], index) => (
+              {Object.entries(roomCategories).map(([category, data], index) => (
                 <div
                   key={category}
                   className="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer border border-gray-200 animate-fadeInUp"
@@ -1180,10 +1244,14 @@ const Dashboard = () => {
 
 
       {/* Add this at the very end, just before the final closing </div> */}
-      <BookingCalendar
-        isOpen={showCalendar}
-        onClose={() => setShowCalendar(false)}
-      />
+      {showCalendar && (
+        <React.Suspense fallback={<div>Loading calendar...</div>}>
+          <BookingCalendar
+            isOpen={showCalendar}
+            onClose={() => setShowCalendar(false)}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
 };
