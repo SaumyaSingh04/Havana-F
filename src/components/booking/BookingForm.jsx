@@ -1307,10 +1307,7 @@ const App = () => {
       showToast.error('Check-out date is required');
     }
     
-    if (!formData.paymentMode) {
-      errors.paymentMode = true;
-      showToast.error('Payment mode is required');
-    }
+
     
     // Set validation errors for visual feedback
     setValidationErrors(errors);
@@ -2817,7 +2814,7 @@ const App = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="paymentMode">Payment Mode <span className="text-red-500">*</span></Label>
+              <Label htmlFor="paymentMode">Payment Mode</Label>
               <Select
                 id="paymentMode"
                 name="paymentMode"

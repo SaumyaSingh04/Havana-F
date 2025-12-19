@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../../context/AppContext";
 import CountdownTimer from "./CountdownTimer";
-import { useKitchenSocket } from "../../hooks/useOrderSocket";
-import { useSocket } from "../../context/SocketContext";
+
 import DashboardLoader from '../DashboardLoader';
 
-import { Wifi, WifiOff } from 'lucide-react';
+
 
 // Add CSS animations
 const styles = `
@@ -41,53 +40,7 @@ const LiveOrders = () => {
   const [itemStates, setItemStates] = useState({});
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   
-  // Real-time socket connection for live updates
-  const { isConnected } = useKitchenSocket({
-    onNewKOT: () => {
-      console.log('🔔 New KOT received, refreshing orders...');
-      fetchOrders();
-    },
-    onKOTStatusUpdate: (data) => {
-      console.log('🔄 KOT status updated:', data);
-      // If this KOT was cancelled, immediately remove it from view
-      if (data.status === 'cancelled' || data.status === 'completed') {
-        console.log('⚡ Removing cancelled/completed order from live view');
-        setOrders(prevOrders => prevOrders.filter(order => order._id !== data.kotId));
-      }
-      fetchOrders();
-    },
-    onNewOrder: () => {
-      console.log('📋 New order received, refreshing orders...');
-      fetchOrders();
-    }
-  });
 
-  // Additional socket listener for order status updates from AllOrders component
-  const { socket } = useSocket();
-  useEffect(() => {
-    if (socket) {
-      const handleOrderStatusUpdate = (data) => {
-        console.log('🚨 Order status updated via socket:', data);
-        if (data.status === 'cancelled' || data.status === 'completed') {
-          console.log('⚡ Removing cancelled/completed order from live view via order update');
-          // Remove orders that match this order ID
-          setOrders(prevOrders => prevOrders.filter(order => {
-            // Check if this order's orderId matches the updated order
-            return order.orderId !== data.orderId;
-          }));
-        }
-        fetchOrders();
-      };
-
-      socket.on('order-status-update', handleOrderStatusUpdate);
-      
-      return () => {
-        socket.off('order-status-update', handleOrderStatusUpdate);
-      };
-    } else {
-      console.log('⚠️ Socket not available, relying on polling for updates');
-    }
-  }, [socket]);
 
   // Custom event listener for immediate order status updates
   useEffect(() => {
@@ -196,12 +149,12 @@ const LiveOrders = () => {
     };
     loadInitialData();
     
-    // Set up less frequent refresh (every 30 seconds) and only if no socket connection
+    // Set up refresh every 2 minutes when page is visible
     const interval = setInterval(() => {
-      if (!isConnected) {
+      if (!document.hidden) {
         fetchOrders();
       }
-    }, 30000);
+    }, 120000);
     
     return () => clearInterval(interval);
   }, []);
@@ -265,18 +218,7 @@ const LiveOrders = () => {
             >
               Refresh
             </button>
-            <div className="flex items-center gap-2">
-              {isConnected ? (
-                <Wifi className="w-5 h-5 text-green-500" />
-              ) : (
-                <WifiOff className="w-5 h-5 text-red-500" />
-              )}
-              <span className={`text-sm font-medium ${
-                isConnected ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {isConnected ? 'Live Updates Active' : 'Offline Mode'}
-              </span>
-            </div>
+
           </div>
         </div>
       </div>
