@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
-import { SocketProvider } from './context/SocketContext';
+
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -81,7 +81,6 @@ function App() {
   return (
     <AuthProvider>
       <AppProvider>
-        <SocketProvider>
           <Router>
           <Toaster position="top-right" />
           <Routes>
@@ -344,7 +343,6 @@ function App() {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
           </Router>
-        </SocketProvider>
       </AppProvider>
     </AuthProvider>
   );
