@@ -30,7 +30,7 @@ export const useKOTManagement = () => {
   const [lastOrderCount, setLastOrderCount] = useState(0);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  const socket = null;
+  const socket = null; // WebSocket disabled
 
   useEffect(() => {
     const loadInitialData = async () => {
