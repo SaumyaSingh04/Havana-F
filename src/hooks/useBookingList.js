@@ -65,6 +65,11 @@ export const useBookingList = () => {
       const bookingsArray = Array.isArray(bookingsData) ? bookingsData : bookingsData.bookings || [];
 
       const mappedBookings = bookingsArray.map((b) => {
+        // Debug log to check room number data
+        if (b.roomNumber && b.roomNumber.includes('205')) {
+          console.log('Booking with room 205:', { id: b._id, roomNumber: b.roomNumber, grcNo: b.grcNo });
+        }
+        
         const room = roomsData.find(r => r.room_number == b.roomNumber || r.roomNumber == b.roomNumber);
         const category = categoriesData.find(c => 
           c._id == b.categoryId || 
@@ -97,7 +102,7 @@ export const useBookingList = () => {
           grcNo: b.grcNo || "N/A",
           name: b.name || "N/A",
           mobileNo: b.mobileNo || "N/A",
-          roomNumber: b.roomNumber || "N/A",
+          roomNumber: b.roomNumber || "N/A", // Use the stored roomNumber directly
           category: category?.name || category?.categoryName || b.categoryId?.name || "N/A",
           checkIn: b.checkInDate ? formatDate(b.checkInDate) : "N/A",
           checkOut: b.checkOutDate ? formatDate(b.checkOutDate) : "N/A",

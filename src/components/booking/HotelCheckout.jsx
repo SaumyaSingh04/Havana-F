@@ -24,6 +24,24 @@ const HotelCheckout = ({ booking, onClose, onCheckoutComplete }) => {
       const token = localStorage.getItem('token');
       const bookingId = booking._id || booking.id;
       
+      // First try to get existing checkout or create one
+      let checkoutResponse;
+      try {
+        // Try to get existing checkout
+        checkoutResponse = await axios.get(`/api/checkout/booking/${bookingId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (error) {
+        // If no checkout exists, create one
+        checkoutResponse = await axios.post(`/api/checkout/create`, {
+          bookingId: bookingId
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+      
+      const existingCheckout = checkoutResponse.data.checkout;
+      
       // Get comprehensive charges using our new endpoint
       const chargesResponse = await axios.get(`/api/bookings/charges/booking/${bookingId}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -32,18 +50,19 @@ const HotelCheckout = ({ booking, onClose, onCheckoutComplete }) => {
       console.log('Charges API response:', chargesResponse.data);
       const charges = chargesResponse.data.charges;
       
-      // Create checkout data structure using correct values from charges API
+      // Merge existing checkout data with updated charges
       const checkoutData = {
-        bookingCharges: charges.roomCharges.taxableAmount || 0,
-        restaurantCharges: charges.summary.totalRestaurantCharges || 0,
-        roomServiceCharges: charges.summary.totalServiceCharges || 0,
-        laundryCharges: charges.summary.totalLaundryCharges || 0,
-        inspectionCharges: 0,
+        ...existingCheckout,
+        bookingCharges: charges.roomCharges.taxableAmount || existingCheckout.bookingCharges || 0,
+        restaurantCharges: charges.summary.totalRestaurantCharges || existingCheckout.restaurantCharges || 0,
+        roomServiceCharges: charges.summary.totalServiceCharges || existingCheckout.roomServiceCharges || 0,
+        laundryCharges: charges.summary.totalLaundryCharges || existingCheckout.laundryCharges || 0,
+        inspectionCharges: existingCheckout.inspectionCharges || 0,
         subtotal: charges.summary.subtotal || 0,
         cgstAmount: charges.roomCharges.cgstAmount || 0,
         sgstAmount: charges.roomCharges.sgstAmount || 0,
-        totalAmount: charges.summary.totalRoomCharges || 0,
-        status: 'pending'
+        totalAmount: charges.summary.totalRoomCharges || existingCheckout.totalAmount || 0,
+        status: existingCheckout.status || 'pending'
       };
       
       console.log('Raw charges data:', charges);
@@ -86,6 +105,12 @@ const HotelCheckout = ({ booking, onClose, onCheckoutComplete }) => {
   const processPayment = async () => {
     if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
       showToast.error('Please enter valid payment amount');
+      return;
+    }
+
+    // Validate that checkoutData has a valid _id
+    if (!checkoutData || !checkoutData._id) {
+      showToast.error('Invalid checkout data. Please refresh and try again.');
       return;
     }
 
