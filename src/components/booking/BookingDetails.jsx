@@ -68,107 +68,27 @@ const BookingDetails = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await axios.get(`${BASE_URL}/api/bookings/booking-number/${bookingId}`, {
+      // Single API call to get all booking details and charges
+      const response = await axios.get(`${BASE_URL}/api/bookings/details-with-charges/${bookingId}`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      setBooking(response.data.booking);
       
-      // Fetch service charges
-      if (response.data.booking._id) {
-        await fetchServiceCharges(response.data.booking._id, token, response.data.booking);
-      }
+      const { booking, serviceCharges, restaurantCharges, laundryCharges } = response.data;
+      
+      setBooking(booking);
+      setServiceCharges(serviceCharges || []);
+      setRestaurantCharges(restaurantCharges || []);
+      setLaundryCharges(laundryCharges || []);
+      
     } catch (err) {
       setError(`Failed to fetch booking details: ${err.response?.data?.error || err.message}`);
     } finally {
       setLoading(false);
     }
   };
-
-  const fetchServiceCharges = async (bookingId, token, bookingData = booking) => {
-    try {
-      console.log('Fetching charges for booking ID:', bookingId);
-      
-      // Fetch room service orders by booking ID
-      const serviceResponse = await axios.get(`${BASE_URL}/api/room-service/all`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        params: { bookingId }
-      });
-      
-      // Fetch restaurant orders by booking ID and booking number
-      const restaurantResponse = await axios.get(`${BASE_URL}/api/restaurant-orders/all`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        params: { 
-          bookingId: bookingId,
-          bookingNumber: bookingData?.grcNo
-        }
-      });
-      
-      // Fetch laundry orders by room number and GRC
-      const laundryResponse = await axios.get(`${BASE_URL}/api/laundry/all`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        params: {
-          search: bookingData?.roomNumber || bookingData?.grcNo
-        }
-      });
-      
-      console.log('Room service response:', serviceResponse.data);
-      console.log('Restaurant response:', restaurantResponse.data);
-      
-      // Filter restaurant orders
-      const allRestaurantOrders = restaurantResponse.data || [];
-      console.log('All restaurant orders:', allRestaurantOrders);
-      console.log('Current booking room number:', bookingData?.roomNumber);
-      console.log('Current booking ID:', bookingId);
-      
-      const filteredRestaurantOrders = allRestaurantOrders.filter(order => {
-        console.log('Checking order:', order._id, 'bookingId:', order.bookingId, 'bookingNumber:', order.bookingNumber, 'tableNo:', order.tableNo, 'status:', order.status);
-        
-        // Match only by booking ID or booking number
-        const matchesBookingId = (order.bookingId && order.bookingId._id === bookingId) || order.bookingId === bookingId;
-        const matchesBookingNumber = order.bookingNumber === bookingData?.grcNo;
-        
-        const isForThisBooking = matchesBookingId || matchesBookingNumber;
-        const isNotCancelled = order.status !== 'cancelled' && order.status !== 'canceled';
-        
-        console.log('Match result:', { matchesBookingId, matchesBookingNumber, isForThisBooking, isNotCancelled });
-        
-        return isForThisBooking && isNotCancelled;
-      });
-      
-      // Filter room service orders to exclude cancelled ones
-      const filteredServiceOrders = (serviceResponse.data.orders || []).filter(order => 
-        order.status !== 'cancelled' && order.status !== 'canceled'
-      );
-      
-      // Filter laundry orders by room number or GRC
-      const allLaundryOrders = laundryResponse.data || [];
-      const roomNumbers = bookingData?.roomNumber ? bookingData.roomNumber.split(',').map(num => num.trim()) : [];
-      const filteredLaundryOrders = allLaundryOrders.filter(order => {
-        const matchesRoom = roomNumbers.some(roomNum => order.roomNumber === roomNum);
-        const matchesGRC = order.grcNo === bookingData?.grcNo;
-        const isNotCancelled = order.laundryStatus !== 'cancelled' && order.laundryStatus !== 'canceled';
-        
-        return (matchesRoom || matchesGRC) && isNotCancelled;
-      });
-      
-      console.log('Final filtered restaurant orders:', filteredRestaurantOrders);
-      console.log('Final filtered service orders:', filteredServiceOrders);
-      console.log('Final filtered laundry orders:', filteredLaundryOrders);
-      
-      setServiceCharges(filteredServiceOrders);
-      setRestaurantCharges(filteredRestaurantOrders);
-      setLaundryCharges(filteredLaundryOrders);
-    } catch (err) {
-      console.error('Failed to fetch service charges:', err);
-    }
-  };
-
-
-
-
 
 
 
