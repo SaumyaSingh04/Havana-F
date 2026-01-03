@@ -51,8 +51,31 @@ const calculateDays = (checkInDate, checkOutDate) => {
 const calculateBilling = (booking, serviceCharges, restaurantCharges, laundryCharges) => {
   const days = calculateDays(booking.checkInDate, booking.checkOutDate);
   
-  // Use the stored rate from booking (which includes all room charges and fees)
-  const netAmount = booking.rate || 0;
+  // Calculate room cost from room rates if available
+  const roomCost = booking.roomRates && booking.roomRates.length > 0 
+    ? booking.roomRates.reduce((sum, roomRate) => sum + (roomRate.customRate || 0), 0) * days
+    : (booking.taxableAmount || booking.rate || 0);
+  
+  // Calculate extra bed charges
+  const extraBedTotal = booking.roomRates ? booking.roomRates.reduce((sum, roomRate) => {
+    if (!roomRate.extraBed) return sum;
+    
+    const startDate = new Date(roomRate.extraBedStartDate || booking.checkInDate);
+    const endDate = new Date(booking.checkOutDate);
+    
+    if (startDate >= endDate) return sum;
+    
+    const timeDiff = endDate.getTime() - startDate.getTime();
+    const extraBedDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    
+    return sum + ((booking.extraBedCharge || 500) * Math.max(0, extraBedDays));
+  }, 0) : 0;
+  
+  const roomSubtotal = roomCost + extraBedTotal;
+  
+  // Apply discount (only on room charges)
+  const discount = roomSubtotal * ((booking.discountPercent || 0) / 100);
+  const roomAfterDiscount = roomSubtotal - discount;
   
   // Calculate service charges
   const serviceTotal = serviceCharges.reduce((sum, order) => {
@@ -83,31 +106,45 @@ const calculateBilling = (booking, serviceCharges, restaurantCharges, laundryCha
     return sum + chargeableAmount;
   }, 0);
   
-  // Total with additional services
-  const totalWithServices = netAmount + serviceTotal + restaurantTotal + laundryTotal;
+  // Calculate late checkout fee
+  const lateCheckoutFee = (booking.lateCheckoutFine?.applied && booking.lateCheckoutFine.amount > 0 && !booking.lateCheckoutFine.waived) 
+    ? booking.lateCheckoutFine.amount : 0;
   
-  // Calculate taxes on total amount
+  // Calculate amendment adjustments
+  const amendmentAdjustment = booking.amendmentHistory?.reduce((sum, amendment) => 
+    sum + (amendment.totalAdjustment || 0), 0) || 0;
+  
+  // Total subtotal before taxes
+  const totalSubtotal = roomAfterDiscount + serviceTotal + restaurantTotal + laundryTotal + lateCheckoutFee + amendmentAdjustment;
+  
+  // Calculate taxes
   const cgstRate = booking.cgstRate !== undefined ? booking.cgstRate : 0.025;
   const sgstRate = booking.sgstRate !== undefined ? booking.sgstRate : 0.025;
-  const cgstAmount = totalWithServices * cgstRate;
-  const sgstAmount = totalWithServices * sgstRate;
+  const cgstAmount = totalSubtotal * cgstRate;
+  const sgstAmount = totalSubtotal * sgstRate;
   
   // Calculate final amounts
-  const exactTotal = totalWithServices + cgstAmount + sgstAmount;
+  const exactTotal = totalSubtotal + cgstAmount + sgstAmount;
   const roundedTotal = Math.round(exactTotal);
   const roundOff = roundedTotal - exactTotal;
   
   // Calculate advance and balance
   const totalAdvance = booking.advancePayments?.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0) || 0;
-  const balanceDue = booking.paymentStatus === 'Paid' ? 0 : Math.max(0, roundedTotal - totalAdvance);
+  const balanceDue = Math.max(0, roundedTotal - totalAdvance);
   
   return {
     days,
-    netAmount,
+    roomCost,
+    extraBedTotal,
+    roomSubtotal,
+    discount,
+    roomAfterDiscount,
     serviceTotal,
     restaurantTotal,
     laundryTotal,
-    totalWithServices,
+    lateCheckoutFee,
+    amendmentAdjustment,
+    totalSubtotal,
     cgstRate,
     sgstRate,
     cgstAmount,
@@ -627,9 +664,31 @@ const BookingDetails = () => {
               {billing && (
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Room Charges (including all fees):</span>
-                    <span className="font-medium">₹{billing.netAmount}</span>
+                    <span className="text-gray-600">Room Cost ({billing.days} days):</span>
+                    <span className="font-medium">₹{billing.roomCost}</span>
                   </div>
+                  {billing.extraBedTotal > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Extra Beds:</span>
+                      <span className="font-medium">₹{billing.extraBedTotal.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Room Subtotal:</span>
+                    <span className="font-medium">₹{billing.roomSubtotal.toFixed(2)}</span>
+                  </div>
+                  {billing.discount > 0 && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Discount ({booking.discountPercent}%):</span>
+                        <span className="font-medium text-red-600">-₹{billing.discount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Room After Discount:</span>
+                        <span className="font-medium">₹{billing.roomAfterDiscount.toFixed(2)}</span>
+                      </div>
+                    </>
+                  )}
                   {(billing.serviceTotal > 0 || billing.restaurantTotal > 0 || billing.laundryTotal > 0) && (
                     <>
                       {billing.serviceTotal > 0 && (
@@ -652,9 +711,21 @@ const BookingDetails = () => {
                       )}
                     </>
                   )}
+                  {billing.lateCheckoutFee > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Late Checkout Fee:</span>
+                      <span className="font-medium">₹{billing.lateCheckoutFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {billing.amendmentAdjustment > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Amendment Adjustment:</span>
+                      <span className="font-medium">₹{billing.amendmentAdjustment.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total Subtotal:</span>
-                    <span className="font-medium">₹{billing.totalWithServices.toFixed(2)}</span>
+                    <span className="font-medium">₹{billing.totalSubtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">CGST ({(billing.cgstRate * 100).toFixed(1)}%):</span>

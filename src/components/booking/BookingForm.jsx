@@ -327,7 +327,7 @@ export const AppProvider = ({ children }) => {
     discountNotes: '',
     nonChargeable: false,
     paymentMode: '',
-    paymentStatus: false,
+    paymentStatus: 'Pending',
     transactionId: '',
     bookingRefNo: '',
     mgmtBlock: 'No',
@@ -2866,8 +2866,8 @@ const App = () => {
                 value={formData.paymentStatus}
                 onChange={handleChange}
               >
-                <option value={false}>Pending</option>
-                <option value={true}>Paid</option>
+                <option value="Pending">Pending</option>
+                <option value="Paid">Paid</option>
                 <option value="Failed">Failed</option>
                 <option value="Partial">Partial</option>
               </Select>
