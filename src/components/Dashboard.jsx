@@ -180,7 +180,7 @@ const Dashboard = () => {
     const savedCard = localStorage.getItem("activeCard");
     return savedCard || "bookings"; // Default to "bookings"
   });
-  const [timeFrame, setTimeFrame] = useState("monthly");
+  const [timeFrame, setTimeFrame] = useState("today");
   const [showCalendar, setShowCalendar] = useState(false);
   const [showDateRange, setShowDateRange] = useState(false);
   const [startDate, setStartDate] = useState('');
@@ -554,7 +554,11 @@ const Dashboard = () => {
         
         switch (timeFrame) {
           case 'today':
-            return bookingDate.toDateString() === now.toDateString();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            return bookingDate >= today && bookingDate < tomorrow;
           case 'weekly':
             const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
             return bookingDate >= weekAgo;
@@ -562,7 +566,11 @@ const Dashboard = () => {
             return bookingDate.getMonth() === now.getMonth() && bookingDate.getFullYear() === now.getFullYear();
           case 'range':
             if (startDate && endDate) {
-              return bookingDate >= new Date(startDate) && bookingDate <= new Date(endDate);
+              const start = new Date(startDate);
+              start.setHours(0, 0, 0, 0);
+              const end = new Date(endDate);
+              end.setHours(23, 59, 59, 999);
+              return bookingDate >= start && bookingDate <= end;
             }
             return true;
           default:
@@ -737,7 +745,10 @@ const Dashboard = () => {
           </div>
         );
       case 'online':
-        const onlinePayments = filteredBookings.filter(b => b.paymentMode && b.paymentMode.toLowerCase().includes('upi'));
+        const onlinePayments = filteredBookings.filter(b => 
+          b.paymentMode === 'UPI' || 
+          (b.advancePayments && b.advancePayments.some(ap => ap.paymentMode && (ap.paymentMode.toLowerCase().includes('upi') || ap.paymentMode.toLowerCase().includes('online') || ap.paymentMode.toLowerCase().includes('card'))))
+        );
         return (
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-4">Online Payments Details</h3>
@@ -774,7 +785,10 @@ const Dashboard = () => {
           </div>
         );
       case 'cash':
-        const cashPayments = filteredBookings.filter(b => b.paymentMode && b.paymentMode.toLowerCase().includes('cash'));
+        const cashPayments = filteredBookings.filter(b => 
+          b.paymentMode === 'Cash' || 
+          (b.advancePayments && b.advancePayments.some(ap => ap.paymentMode && ap.paymentMode.toLowerCase().includes('cash')))
+        );
         return (
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-4">Cash Payments Details</h3>
