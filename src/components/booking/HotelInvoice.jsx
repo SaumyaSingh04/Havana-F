@@ -937,68 +937,102 @@ export default function Invoice() {
               </tr>
             </thead>
             <tbody>
-              {invoiceData.items?.map((item, index) => {
-                // Calculate date range for room items
-                const getDateRange = () => {
-                  if (item.particulars && item.particulars.toLowerCase().includes('room rent')) {
-                    const checkIn = bookingData?.checkInDate ? formatDate(bookingData.checkInDate) : formatDate();
-                    const checkOut = bookingData?.checkOutDate ? formatDate(bookingData.checkOutDate) : formatDate();
-                    return `${checkIn} - ${checkOut}`;
+              {invoiceData.items?.flatMap((item, index) => {
+                // For room items, create separate rows for each day
+                if (item.particulars && (item.particulars.toLowerCase().includes('room') || item.particulars.toLowerCase().includes('extra bed'))) {
+                  const checkIn = bookingData?.checkInDate ? new Date(bookingData.checkInDate) : new Date();
+                  const checkOut = bookingData?.checkOutDate ? new Date(bookingData.checkOutDate) : new Date();
+                  
+                  // Calculate number of nights (not days)
+                  const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+                  const dailyRate = (item.amount || 0) / nights;
+                  
+                  const rows = [];
+                  for (let i = 0; i < nights; i++) {
+                    const currentDate = new Date(checkIn);
+                    currentDate.setDate(checkIn.getDate() + i);
+                    const formattedDate = currentDate.toLocaleDateString('en-GB');
+                    
+                    rows.push(
+                      <tr key={`${index}-${i}`} className="border border-black">
+                        <td className="p-1 border border-black" style={{width: '150px', fontSize: '10px'}}>{formattedDate}</td>
+                        <td className="p-1 border border-black">{item.particulars}</td>
+                        <td className="p-1 border border-black text-right">₹{dailyRate.toFixed(2)}</td>
+                        <td className="p-1 border border-black text-right">
+                          {i === 0 ? (
+                            item.isFree ? (
+                              <div>
+                                <span className="line-through text-gray-400">₹{(item.declaredRate?.toFixed(2) || '0.00')}</span>
+                                <div className="text-green-600 font-bold text-xs">FREE</div>
+                              </div>
+                            ) : (
+                              <span>₹{(item.declaredRate?.toFixed(2) || '0.00')}</span>
+                            )
+                          ) : ''}
+                        </td>
+                        <td className="p-1 border border-black text-center">{i === 0 ? '996311' : ''}</td>
+                        <td className="p-1 border border-black text-right font-bold">
+                          {i === 0 ? (
+                            item.isFree ? (
+                              <span className="text-green-600">FREE</span>
+                            ) : (
+                              <span>₹{(item.amount?.toFixed(2) || '0.00')}</span>
+                            )
+                          ) : ''}
+                        </td>
+                      </tr>
+                    );
                   }
-                  return typeof item === 'object' ? (item.date || 'N/A') : 'N/A';
-                };
-                
-                // Calculate room rate per night
-                const getRoomRate = () => {
-                  if (item.particulars && item.particulars.toLowerCase().includes('room rent')) {
-                    const days = calculateDays(bookingData?.checkInDate, bookingData?.checkOutDate) || 1;
-                    const totalAmount = typeof item === 'object' ? (item.amount || 0) : 0;
-                    return (totalAmount / days).toFixed(2);
-                  }
-                  return '-';
-                };
-                
-                return (
-                  <tr key={index} className="border border-black">
-                    <td className="p-1 border border-black" style={{width: '150px', fontSize: '10px'}}>{getDateRange()}</td>
-                    <td className="p-1 border border-black">{typeof item === 'object' ? (item.particulars || 'N/A') : String(item)}</td>
-                    <td className="p-1 border border-black text-right">
-                      {getRoomRate() !== '-' ? `₹${getRoomRate()}` : '-'}
-                    </td>
-                    <td className="p-1 border border-black text-right">
-                      {item.isFree ? (
-                        <div>
-                          <span className="line-through text-gray-400">₹{typeof item === 'object' ? (item.declaredRate?.toFixed(2) || '0.00') : '0.00'}</span>
-                          <div className="text-green-600 font-bold text-xs">FREE</div>
-                        </div>
-                      ) : (
-                        <span>₹{typeof item === 'object' ? (item.declaredRate?.toFixed(2) || '0.00') : '0.00'}</span>
-                      )}
-                    </td>
-                    <td className="p-1 border border-black text-center">{(() => {
-                      if (typeof item === 'object' && item.particulars) {
-                        const particulars = item.particulars.toLowerCase();
-                        if (particulars.includes('room') && !particulars.includes('service') && !particulars.includes('dining')) return '996311';
-                        if (particulars.includes('room service') || particulars.includes('dining') || particulars.includes('restaurant')) return '996332';
-                        if (particulars.includes('banquet') || particulars.includes('hall')) return '996334';
-                        if (particulars.includes('mini bar') || particulars.includes('minibar')) return '996331';
-                        if (particulars.includes('laundry') || particulars.includes('laundary')) return '996337';
-                        return item.hsn || '996311';
-                      }
-                      return 'N/A';
-                    })()}</td>
-                    <td className="p-1 border border-black text-right font-bold">
-                      {item.isFree ? (
-                        <span className="text-green-600">FREE</span>
-                      ) : (
-                        <span>₹{typeof item === 'object' ? (item.amount?.toFixed(2) || '0.00') : '0.00'}</span>
-                      )}
-                    </td>
-                  </tr>
-                );
+                  return rows;
+                } else {
+                  // For non-room items, show as single row
+                  return [
+                    <tr key={index} className="border border-black">
+                      <td className="p-1 border border-black" style={{width: '150px', fontSize: '10px'}}>{typeof item === 'object' ? (item.date || formatDate()) : formatDate()}</td>
+                      <td className="p-1 border border-black">{typeof item === 'object' ? (item.particulars || 'N/A') : String(item)}</td>
+                      <td className="p-1 border border-black text-right">-</td>
+                      <td className="p-1 border border-black text-right">
+                        {item.isFree ? (
+                          <div>
+                            <span className="line-through text-gray-400">₹{typeof item === 'object' ? (item.declaredRate?.toFixed(2) || '0.00') : '0.00'}</span>
+                            <div className="text-green-600 font-bold text-xs">FREE</div>
+                          </div>
+                        ) : (
+                          <span>₹{typeof item === 'object' ? (item.declaredRate?.toFixed(2) || '0.00') : '0.00'}</span>
+                        )}
+                      </td>
+                      <td className="p-1 border border-black text-center">{(() => {
+                        if (typeof item === 'object' && item.particulars) {
+                          const particulars = item.particulars.toLowerCase();
+                          if (particulars.includes('room') && !particulars.includes('service') && !particulars.includes('dining')) return '996311';
+                          if (particulars.includes('room service') || particulars.includes('dining') || particulars.includes('restaurant')) return '996332';
+                          if (particulars.includes('banquet') || particulars.includes('hall')) return '996334';
+                          if (particulars.includes('mini bar') || particulars.includes('minibar')) return '996331';
+                          if (particulars.includes('laundry') || particulars.includes('laundary')) return '996337';
+                          return item.hsn || '996311';
+                        }
+                        return 'N/A';
+                      })()}</td>
+                      <td className="p-1 border border-black text-right font-bold">
+                        {item.isFree ? (
+                          <span className="text-green-600">FREE</span>
+                        ) : (
+                          <span>₹{typeof item === 'object' ? (item.amount?.toFixed(2) || '0.00') : '0.00'}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ];
+                }
               })}
               <tr className="border border-black bg-gray-100">
-                <td colSpan="3" className="p-1 text-right font-bold border border-black">SUB TOTAL :</td>
+                <td colSpan="2" className="p-1 text-right font-bold border border-black">SUB TOTAL :</td>
+                <td className="p-1 text-right border border-black font-bold">₹{(() => {
+                  if (!invoiceData?.items) return '0.00';
+                  const roomCharges = invoiceData.items.filter(item => 
+                    item.particulars && (item.particulars.includes('Room') || item.particulars.includes('ROOM') || item.particulars.includes('Extra Bed'))
+                  ).reduce((sum, item) => sum + (item.isFree ? 0 : (item.amount || 0)), 0);
+                  return roomCharges.toFixed(2);
+                })()}</td>
                 <td className="p-1 text-right border border-black font-bold">₹{(() => {
                   if (!invoiceData?.items) return '0.00';
                   const declaredRateTotal = invoiceData.items.reduce((sum, item) => {
