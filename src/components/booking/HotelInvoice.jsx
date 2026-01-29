@@ -890,9 +890,17 @@ export default function Invoice() {
               )}
 
               <p className="font-bold">CheckIn Date</p>
-              <p className="font-medium">: {bookingData?.checkInDate ? formatDate(bookingData.checkInDate) : (invoiceData.invoiceDetails?.checkInDate && invoiceData.invoiceDetails.checkInDate !== 'N/A' ? invoiceData.invoiceDetails.checkInDate : formatDate())}</p>
+              <p className="font-medium">: {(() => {
+                const checkInDate = bookingData?.checkInDate ? formatDate(bookingData.checkInDate) : (invoiceData.invoiceDetails?.checkInDate && invoiceData.invoiceDetails.checkInDate !== 'N/A' ? invoiceData.invoiceDetails.checkInDate : formatDate());
+                const checkInTime = bookingData?.actualCheckInTime ? new Date(bookingData.actualCheckInTime).toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' }) : (bookingData?.timeIn || '');
+                return `${checkInDate}${checkInTime ? ` ${checkInTime}` : ''}`;
+              })()}</p>
               <p className="font-bold">CheckOut Date</p>
-              <p className="font-medium">: {bookingData?.checkOutDate ? formatDate(bookingData.checkOutDate) : (invoiceData.invoiceDetails?.checkOutDate && invoiceData.invoiceDetails.checkOutDate !== 'N/A' ? invoiceData.invoiceDetails.checkOutDate : formatDate())}</p>
+              <p className="font-medium">: {(() => {
+                const checkOutDate = bookingData?.checkOutDate ? formatDate(bookingData.checkOutDate) : (invoiceData.invoiceDetails?.checkOutDate && invoiceData.invoiceDetails.checkOutDate !== 'N/A' ? invoiceData.invoiceDetails.checkOutDate : formatDate());
+                const checkOutTime = bookingData?.actualCheckOutTime ? new Date(bookingData.actualCheckOutTime).toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' }) : (bookingData?.timeOut || '');
+                return `${checkOutDate}${checkOutTime ? ` ${checkOutTime}` : ''}`;
+              })()}</p>
               {bookingData?.planPackage && (
                 <>
                   <p className="font-bold">Package Plan</p>
